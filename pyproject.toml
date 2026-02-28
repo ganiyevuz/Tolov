@@ -1,0 +1,74 @@
+[project]
+name = "tolov"
+version = "0.3.51"
+description = "Unified payment library for Uzbekistan payment systems (Payme, Click, Uzum, Paynet, Octo)"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Jakhongir Ganiev", email = "info@jakhongir.dev" },
+]
+keywords = [
+    "payments",
+    "uzbekistan",
+    "payme",
+    "click",
+    "uzum",
+    "paynet",
+    "octo",
+    "payment-gateway",
+    "tolov",
+]
+classifiers = [
+    "Framework :: Django",
+    "Framework :: FastAPI",
+    "Programming Language :: Python :: 3",
+    "Topic :: Office/Business :: Financial",
+]
+dependencies = [
+    "requests>=2,<3",
+]
+
+[project.optional-dependencies]
+django = [
+    "django>=3.2",
+    "djangorestframework>=3,<4",
+]
+fastapi = [
+    "fastapi>=0.68",
+    "sqlalchemy>=1.4",
+    "pydantic>=1.8",
+    "httpx>=0.23",
+    "python-multipart>=0.0.5",
+]
+flask = [
+    "flask>=2.0",
+    "flask-sqlalchemy>=3.0",
+]
+
+[project.urls]
+Repository = "https://github.com/ganiyevuz/tolov"
+
+[dependency-groups]
+dev = [
+    "black==22.3.0",
+    "ipdb==0.13.9",
+    "ipython>=7.31.1",
+    "flake8==4.0.1",
+    "isort==5.10.1",
+    "mypy==0.961",
+    "twine==3.8.0",
+    "wheel==0.38.1",
+    "djangorestframework==3.14.0",
+    "environs==9.5.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["tolov*"]
+
+[tool.isort]
+profile = "black"

@@ -1,0 +1,28 @@
+name: Testing project
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    env:
+      PAYME_ID: ${{ secrets.PAYME_ID }}
+      PAYME_KEY: ${{ secrets.PAYME_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync --python ${{ matrix.python-version }}
+      - name: Run unit tests
+        run: uv run python tests.py

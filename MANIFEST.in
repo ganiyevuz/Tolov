@@ -1,0 +1,21 @@
+# Include documentation and license
+include README.md
+include LICENSE.txt
+
+# Include all Python files
+recursive-include tolov *.py
+
+# Exclude development and test files
+exclude makefile
+exclude tests.py
+exclude tests_settings.py
+recursive-exclude tests *
+recursive-exclude scripts *
+recursive-exclude requirements *
+recursive-exclude .github *
+
+# Exclude cache and build files
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *$py.class
+global-exclude .DS_Store

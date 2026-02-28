@@ -1,0 +1,32 @@
+# virtual env
+env/
+venv/
+.env
+
+# dev test
+core/
+my_app/
+db.sqlite3
+manage.py
+dist/
+
+# ide configs
+.vscode/
+.idea/
+
+# caches
+__pycache__/
+paymentsuz.egg-info/
+payme_uz.egg-info/
+
+.DS_Store
+build/
+
+# PyArmor obfuscated files
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+pyarmor_runtime_*/
+.pyarmor/
