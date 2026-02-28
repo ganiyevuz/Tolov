@@ -4,7 +4,6 @@ venv/
 .env
 
 # dev test
-core/
 my_app/
 db.sqlite3
 manage.py
@@ -14,10 +13,12 @@ dist/
 .vscode/
 .idea/
 
+# keep payme local
+payme/
+
 # caches
 __pycache__/
-paymentsuz.egg-info/
-payme_uz.egg-info/
+*.egg-info/
 
 .DS_Store
 build/
