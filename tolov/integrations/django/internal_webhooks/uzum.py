@@ -3,7 +3,7 @@ Uzum internal webhook handler.
 """
 import json
 import base64
-import logging
+from loguru import logger
 
 from decimal import Decimal
 from datetime import datetime
@@ -26,7 +26,6 @@ from tolov.core.base import BasePaymentProcessor
 from tolov.integrations.django.models import PaymentTransaction
 
 
-logger = logging.getLogger(__name__)
 
 
 class UzumWebhook(BasePaymentProcessor, View):

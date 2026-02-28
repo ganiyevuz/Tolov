@@ -2,7 +2,7 @@
 Payme internal webhook handler.
 """
 import json
-import logging
+from loguru import logger
 from decimal import Decimal
 from datetime import datetime
 
@@ -25,7 +25,6 @@ from tolov.integrations.django.models import PaymentTransaction
 from tolov.gateways.payme.constants import PaymeErrors
 
 
-logger = logging.getLogger(__name__)
 
 
 class PaymeWebhook(BasePaymentProcessor, View):

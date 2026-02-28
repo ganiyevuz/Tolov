@@ -7,7 +7,7 @@ The public handlers in routes.py inherit from these classes.
 
 import hashlib
 import json
-import logging
+from loguru import logger
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, Any, Optional
@@ -34,7 +34,6 @@ from tolov.core.base import BasePaymentProcessor
 
 from .models import PaymentTransaction
 
-logger = logging.getLogger(__name__)
 
 
 class PaymeWebhookHandlerInternal(BasePaymentProcessor):

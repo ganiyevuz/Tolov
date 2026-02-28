@@ -2,7 +2,7 @@
 Octo payment gateway client.
 This is a thin wrapper that provides a clean interface but delegates to internal implementation.
 """
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional, Union, List
 
 from tolov.core.http import HttpClient
@@ -11,7 +11,6 @@ from tolov.gateways.octo.constants import OctoNetworks
 from tolov.gateways.octo.internal import OctoGatewayInternal
 
 
-logger = logging.getLogger(__name__)
 
 
 class OctoGateway(BasePaymentGateway):

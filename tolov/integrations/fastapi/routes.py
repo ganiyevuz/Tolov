@@ -4,7 +4,7 @@ FastAPI routes for Tolov.
 Public webhook handlers that provide type hints and IDE support.
 These classes inherit from internal handlers which contain the compiled business logic.
 """
-import logging
+from loguru import logger
 from typing import Dict, Any
 
 from fastapi import APIRouter, Request, Response
@@ -17,7 +17,6 @@ from .internal import (
 from .models import PaymentTransaction
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
 
 class PaymeWebhookHandler(PaymeWebhookHandlerInternal):

@@ -2,7 +2,7 @@
 Paynet payment gateway client.
 This is a thin wrapper that provides a clean interface but delegates to internal implementation.
 """
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional, Union
 
 from tolov.core.base import BasePaymentGateway
@@ -10,7 +10,6 @@ from tolov.core.utils import handle_exceptions
 from tolov.gateways.paynet.internal import PaynetGatewayInternal
 
 
-logger = logging.getLogger(__name__)
 
 
 class PaynetGateway(BasePaymentGateway):

@@ -2,13 +2,12 @@
 Uzum payment gateway client.
 This client uses Uzum Biller (open-service) for payment URL generation.
 """
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional, Union
 
 from tolov.core.base import BasePaymentGateway
 from tolov.gateways.uzum.internal import UzumGatewayInternal
 
-logger = logging.getLogger(__name__)
 
 
 class UzumGateway(BasePaymentGateway):

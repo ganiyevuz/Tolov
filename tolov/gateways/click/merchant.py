@@ -2,7 +2,7 @@
 Click merchant API operations.
 """
 import hashlib
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional, Union
 
 from tolov.core.http import HttpClient
@@ -10,7 +10,6 @@ from tolov.gateways.click.constants import ClickEndpoints
 from tolov.core.utils import handle_exceptions, generate_timestamp
 
 
-logger = logging.getLogger(__name__)
 
 
 class ClickMerchantApi:

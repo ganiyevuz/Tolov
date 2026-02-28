@@ -5,14 +5,13 @@ import base64
 import hashlib
 import hmac
 import json
-import logging
+from loguru import logger
 import time
 import uuid
 from datetime import datetime
 from typing import Dict, Any, Union, Optional
 
 
-logger = logging.getLogger(__name__)
 
 
 def generate_timestamp() -> int:

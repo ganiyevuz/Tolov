@@ -3,12 +3,11 @@ Payme payment gateway internal implementation.
 This module contains the actual business logic and will be compiled to .so
 """
 import base64
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional, Union
 
 from tolov.core.utils import handle_exceptions
 
-logger = logging.getLogger(__name__)
 
 
 class PaymeGatewayInternal:

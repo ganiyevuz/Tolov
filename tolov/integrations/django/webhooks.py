@@ -4,7 +4,7 @@ Django webhook handlers for Tolov.
 Public webhook classes that provide type hints and IDE support.
 These classes inherit from internal webhooks which contain the compiled business logic.
 """
-import logging
+from loguru import logger
 
 from .internal_webhooks import (
     PaymeWebhook as PaymeWebhookInternal,
@@ -14,7 +14,6 @@ from .internal_webhooks import (
     OctoWebhook as OctoWebhookInternal,
 )
 
-logger = logging.getLogger(__name__)
 
 
 class PaymeWebhook(PaymeWebhookInternal):

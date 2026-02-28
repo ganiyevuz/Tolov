@@ -1,14 +1,13 @@
 """
 Django views for Tolov.
 """
-import logging
+from loguru import logger
 
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
 from .webhooks import PaymeWebhook, ClickWebhook, UzumWebhook, PaynetWebhook, OctoWebhook
 
-logger = logging.getLogger(__name__)
 
 
 @method_decorator(csrf_exempt, name='dispatch')

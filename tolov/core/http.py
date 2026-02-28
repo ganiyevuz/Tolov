@@ -2,7 +2,7 @@
 HTTP client for making requests to payment gateways.
 """
 import json
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional, Union, List
 
 import requests
@@ -14,7 +14,6 @@ from tolov.core.exceptions import (
     InternalServiceError
 )
 
-logger = logging.getLogger(__name__)
 
 
 class HttpClient:

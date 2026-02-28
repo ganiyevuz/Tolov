@@ -2,7 +2,7 @@
 Octo payment gateway internal implementation.
 """
 import uuid
-import logging
+from loguru import logger
 from datetime import datetime
 from typing import Dict, Any, Optional, Union, List
 
@@ -12,7 +12,6 @@ from tolov.gateways.octo.constants import (
     OctoPaymentMethods,
 )
 
-logger = logging.getLogger(__name__)
 
 
 class OctoGatewayInternal:

@@ -1,7 +1,7 @@
 """
 Payme cards operations.
 """
-import logging
+from loguru import logger
 from typing import Dict, Any
 
 from tolov.core.http import HttpClient
@@ -9,7 +9,6 @@ from tolov.core.utils import handle_exceptions
 from tolov.gateways.payme.constants import PaymeEndpoints
 
 
-logger = logging.getLogger(__name__)
 
 
 class PaymeCards:

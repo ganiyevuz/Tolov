@@ -2,7 +2,7 @@
 Payme payment gateway client.
 This is a thin wrapper that provides a clean interface but delegates to internal implementation.
 """
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional, Union
 
 from tolov.core.http import HttpClient
@@ -15,7 +15,6 @@ from tolov.gateways.payme.constants import PaymeNetworks
 from tolov.gateways.payme.internal import PaymeGatewayInternal
 
 
-logger = logging.getLogger(__name__)
 
 
 class PaymeGateway(BasePaymentGateway):

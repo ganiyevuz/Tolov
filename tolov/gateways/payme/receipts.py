@@ -2,7 +2,7 @@
 Payme receipts operations.
 """
 # base64 is used indirectly through generate_basic_auth
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional
 
 from tolov.core.http import HttpClient
@@ -10,7 +10,6 @@ from tolov.gateways.payme.constants import PaymeEndpoints
 from tolov.core.utils import handle_exceptions, generate_basic_auth
 
 
-logger = logging.getLogger(__name__)
 
 
 class PaymeReceipts:

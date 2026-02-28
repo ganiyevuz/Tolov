@@ -6,7 +6,7 @@ Octo sends POST requests to the ``notify_url`` specified during ``prepare_paymen
 """
 import hashlib
 import json
-import logging
+from loguru import logger
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict
 
@@ -20,7 +20,6 @@ from tolov.integrations.django.models import PaymentTransaction
 from tolov.gateways.octo.client import OctoGateway
 from tolov.gateways.octo.constants import OctoStatus
 
-logger = logging.getLogger(__name__)
 
 
 class OctoWebhook(View):

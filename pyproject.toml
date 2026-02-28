@@ -1,6 +1,6 @@
 [project]
 name = "tolov"
-version = "0.3.51"
+version = "1.0.0"
 description = "Unified payment library for Uzbekistan payment systems (Payme, Click, Uzum, Paynet, Octo)"
 readme = "README.md"
 license = "MIT"
@@ -27,6 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "requests>=2,<3",
+    "loguru>=0.7",
 ]
 
 [project.optional-dependencies]

@@ -2,7 +2,7 @@
 Click internal webhook handler.
 """
 import hashlib
-import logging
+from loguru import logger
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils.module_loading import import_string
@@ -15,7 +15,6 @@ from tolov.core.exceptions import (
 )
 from tolov.integrations.django.models import PaymentTransaction
 
-logger = logging.getLogger(__name__)
 
 
 class ClickWebhook(View):

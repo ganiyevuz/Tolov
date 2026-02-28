@@ -3,14 +3,13 @@ Uzum payment gateway internal implementation.
 This module contains the core business logic for Uzum Biller (open-service).
 """
 import uuid
-import logging
+from loguru import logger
 from typing import Dict, Any, Optional, Union
 
 from tolov.core.http import HttpClient
 from tolov.gateways.uzum.constants import UzumNetworks, UzumEndpoints, UzumStatus
 
 
-logger = logging.getLogger(__name__)
 
 
 class UzumGatewayInternal:
