@@ -51,9 +51,9 @@ class PaymeWebhookHandler(PaymeWebhookHandlerInternal):
         payme_id: str,
         payme_key: str,
         account_model: Any,
-        account_field: str = 'id',
-        amount_field: str = 'amount',
-        one_time_payment: bool = True
+        account_field: str = "id",
+        amount_field: str = "amount",
+        one_time_payment: bool = True,
     ):
         """
         Initialize the Payme webhook handler.
@@ -74,7 +74,7 @@ class PaymeWebhookHandler(PaymeWebhookHandlerInternal):
             account_model=account_model,
             account_field=account_field,
             amount_field=amount_field,
-            one_time_payment=one_time_payment
+            one_time_payment=one_time_payment,
         )
 
     async def handle_webhook(self, request: Request) -> Response:
@@ -116,10 +116,7 @@ class PaymeWebhookHandler(PaymeWebhookHandlerInternal):
         pass
 
     def transaction_created(
-        self,
-        params: Dict[str, Any],
-        transaction: PaymentTransaction,
-        account: Any
+        self, params: Dict[str, Any], transaction: PaymentTransaction, account: Any
     ) -> None:
         """
         Called when a transaction is created.
@@ -132,9 +129,7 @@ class PaymeWebhookHandler(PaymeWebhookHandlerInternal):
         pass
 
     def successfully_payment(
-        self,
-        params: Dict[str, Any],
-        transaction: PaymentTransaction
+        self, params: Dict[str, Any], transaction: PaymentTransaction
     ) -> None:
         """
         Called when a payment is successful.
@@ -146,9 +141,7 @@ class PaymeWebhookHandler(PaymeWebhookHandlerInternal):
         pass
 
     def check_transaction(
-        self,
-        params: Dict[str, Any],
-        transaction: PaymentTransaction
+        self, params: Dict[str, Any], transaction: PaymentTransaction
     ) -> None:
         """
         Called when checking a transaction.
@@ -160,9 +153,7 @@ class PaymeWebhookHandler(PaymeWebhookHandlerInternal):
         pass
 
     def cancelled_payment(
-        self,
-        params: Dict[str, Any],
-        transaction: PaymentTransaction
+        self, params: Dict[str, Any], transaction: PaymentTransaction
     ) -> None:
         """
         Called when a payment is cancelled.
@@ -173,11 +164,7 @@ class PaymeWebhookHandler(PaymeWebhookHandlerInternal):
         """
         pass
 
-    def get_statement(
-        self,
-        params: Dict[str, Any],
-        transactions: list
-    ) -> None:
+    def get_statement(self, params: Dict[str, Any], transactions: list) -> None:
         """
         Called when getting a statement.
 
@@ -221,8 +208,8 @@ class ClickWebhookHandler(ClickWebhookHandlerInternal):
         secret_key: str,
         account_model: Any,
         commission_percent: float = 0.0,
-        account_field: str = 'id',
-        one_time_payment: bool = True
+        account_field: str = "id",
+        one_time_payment: bool = True,
     ):
         """
         Initialize the Click webhook handler.
@@ -243,7 +230,7 @@ class ClickWebhookHandler(ClickWebhookHandlerInternal):
             account_model=account_model,
             commission_percent=commission_percent,
             account_field=account_field,
-            one_time_payment=one_time_payment
+            one_time_payment=one_time_payment,
         )
 
     async def handle_webhook(self, request: Request) -> Dict[str, Any]:
@@ -261,9 +248,7 @@ class ClickWebhookHandler(ClickWebhookHandlerInternal):
     # Event methods that can be overridden by subclasses
 
     def transaction_already_exists(
-        self,
-        params: Dict[str, Any],
-        transaction: PaymentTransaction
+        self, params: Dict[str, Any], transaction: PaymentTransaction
     ) -> None:
         """
         Called when a transaction already exists.
@@ -275,10 +260,7 @@ class ClickWebhookHandler(ClickWebhookHandlerInternal):
         pass
 
     def transaction_created(
-        self,
-        params: Dict[str, Any],
-        transaction: PaymentTransaction,
-        account: Any
+        self, params: Dict[str, Any], transaction: PaymentTransaction, account: Any
     ) -> None:
         """
         Called when a transaction is created.
@@ -291,9 +273,7 @@ class ClickWebhookHandler(ClickWebhookHandlerInternal):
         pass
 
     def successfully_payment(
-        self,
-        params: Dict[str, Any],
-        transaction: PaymentTransaction
+        self, params: Dict[str, Any], transaction: PaymentTransaction
     ) -> None:
         """
         Called when a payment is successful.
@@ -305,9 +285,7 @@ class ClickWebhookHandler(ClickWebhookHandlerInternal):
         pass
 
     def cancelled_payment(
-        self,
-        params: Dict[str, Any],
-        transaction: PaymentTransaction
+        self, params: Dict[str, Any], transaction: PaymentTransaction
     ) -> None:
         """
         Called when a payment is cancelled.
@@ -317,6 +295,3 @@ class ClickWebhookHandler(ClickWebhookHandlerInternal):
             transaction: Transaction object
         """
         pass
-
-
-

@@ -4,7 +4,8 @@ FastAPI integration for Tolov.
 
 try:
     from tolov.core.dependencies import check_dependencies
-    check_dependencies('fastapi', raise_error=False)
+
+    check_dependencies("fastapi", raise_error=False)
 except ImportError:
     pass
 
@@ -19,10 +20,6 @@ from .schemas import (  # noqa: F401
     PaymeWebhookResponse,
     PaymeWebhookErrorResponse,
     ClickWebhookRequest,
-    ClickWebhookResponse
+    ClickWebhookResponse,
 )
-from .routes import (  # noqa: F401
-    router,
-    PaymeWebhookHandler,
-    ClickWebhookHandler
-)
+from .routes import router, PaymeWebhookHandler, ClickWebhookHandler  # noqa: F401

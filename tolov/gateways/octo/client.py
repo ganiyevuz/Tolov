@@ -11,8 +11,6 @@ from tolov.gateways.octo.constants import OctoNetworks
 from tolov.gateways.octo.internal import OctoGatewayInternal
 
 
-
-
 class OctoGateway(BasePaymentGateway):
     """
     Octo payment gateway implementation.

@@ -18,19 +18,14 @@ class ClickMerchantApi(_SyncClickMerchantApi):
 
     @handle_exceptions
     async def cancel_payment(
-        self,
-        id: Union[int, str],
-        reason: Optional[str] = None
+        self, id: Union[int, str], reason: Optional[str] = None
     ) -> Dict[str, Any]:
         endpoint, data = self._build_cancel_payment_request(id, reason)
         return await self.http_client.post(endpoint=endpoint, json_data=data)
 
     @handle_exceptions
     async def create_invoice(
-        self,
-        id: Union[int, str],
-        amount: Union[int, float],
-        **kwargs
+        self, id: Union[int, str], amount: Union[int, float], **kwargs
     ) -> Dict[str, Any]:
         endpoint, data = self._build_create_invoice_request(id, amount, **kwargs)
         return await self.http_client.post(endpoint=endpoint, json_data=data)
@@ -42,40 +37,34 @@ class ClickMerchantApi(_SyncClickMerchantApi):
 
     @handle_exceptions
     async def cancel_invoice(
-        self,
-        invoice_id: str,
-        reason: Optional[str] = None
+        self, invoice_id: str, reason: Optional[str] = None
     ) -> Dict[str, Any]:
         endpoint, data = self._build_cancel_invoice_request(invoice_id, reason)
         return await self.http_client.post(endpoint=endpoint, json_data=data)
 
     @handle_exceptions
     async def card_token_request(
-        self,
-        card_number: str,
-        expire_date: str,
-        temporary: int = 0
+        self, card_number: str, expire_date: str, temporary: int = 0
     ) -> Dict[str, Any]:
-        endpoint, data = self._build_card_token_request_request(card_number, expire_date, temporary)
+        endpoint, data = self._build_card_token_request_request(
+            card_number, expire_date, temporary
+        )
         return await self.http_client.post(endpoint=endpoint, json_data=data)
 
     @handle_exceptions
     async def card_token_verify(
-        self,
-        card_token: str,
-        sms_code: Union[int, str]
+        self, card_token: str, sms_code: Union[int, str]
     ) -> Dict[str, Any]:
         endpoint, data = self._build_card_token_verify_request(card_token, sms_code)
         return await self.http_client.post(endpoint=endpoint, json_data=data)
 
     @handle_exceptions
     async def card_token_payment(
-        self,
-        card_token: str,
-        amount: Union[int, float],
-        transaction_parameter: str
+        self, card_token: str, amount: Union[int, float], transaction_parameter: str
     ) -> Dict[str, Any]:
-        endpoint, data = self._build_card_token_payment_request(card_token, amount, transaction_parameter)
+        endpoint, data = self._build_card_token_payment_request(
+            card_token, amount, transaction_parameter
+        )
         return await self.http_client.post(endpoint=endpoint, json_data=data)
 
 
@@ -88,7 +77,7 @@ class ClickGateway(_SyncClickGateway):
             http_client=self.http_client,
             service_id=self.service_id,
             merchant_user_id=self.merchant_user_id,
-            secret_key=self.secret_key
+            secret_key=self.secret_key,
         )
         # Create _internal for inherited sync methods (create_payment is a URL builder, no HTTP)
         self._internal = ClickGatewayInternal(
@@ -109,33 +98,27 @@ class ClickGateway(_SyncClickGateway):
 
     @handle_exceptions
     async def cancel_payment(
-        self,
-        transaction_id: str,
-        reason: Optional[str] = None
+        self, transaction_id: str, reason: Optional[str] = None
     ) -> Dict[str, Any]:
         account_id = ClickGatewayInternal.parse_transaction_id(transaction_id)
         cancel_data = await self.merchant_api.cancel_payment(account_id, reason)
         return ClickGatewayInternal.process_cancel_response(cancel_data, transaction_id)
 
     async def card_token_request(
-        self,
-        card_number: str,
-        expire_date: str,
-        temporary: int = 0
+        self, card_number: str, expire_date: str, temporary: int = 0
     ) -> Dict[str, Any]:
-        return await self.merchant_api.card_token_request(card_number, expire_date, temporary)
+        return await self.merchant_api.card_token_request(
+            card_number, expire_date, temporary
+        )
 
     async def card_token_verify(
-        self,
-        card_token: str,
-        sms_code: Union[int, str]
+        self, card_token: str, sms_code: Union[int, str]
     ) -> Dict[str, Any]:
         return await self.merchant_api.card_token_verify(card_token, sms_code)
 
     async def card_token_payment(
-        self,
-        card_token: str,
-        amount: Union[int, float],
-        transaction_parameter: str
+        self, card_token: str, amount: Union[int, float], transaction_parameter: str
     ) -> Dict[str, Any]:
-        return await self.merchant_api.card_token_payment(card_token, amount, transaction_parameter)
+        return await self.merchant_api.card_token_payment(
+            card_token, amount, transaction_parameter
+        )

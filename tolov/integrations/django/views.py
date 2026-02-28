@@ -6,11 +6,16 @@ from loguru import logger
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
-from .webhooks import PaymeWebhook, ClickWebhook, UzumWebhook, PaynetWebhook, OctoWebhook
+from .webhooks import (
+    PaymeWebhook,
+    ClickWebhook,
+    UzumWebhook,
+    PaynetWebhook,
+    OctoWebhook,
+)
 
 
-
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class BasePaymeWebhookView(PaymeWebhook):
     """
     Default Payme webhook view.
@@ -62,7 +67,7 @@ class BasePaymeWebhookView(PaymeWebhook):
         """
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class BaseClickWebhookView(ClickWebhook):
     """
     Default Click webhook view.
@@ -108,8 +113,7 @@ class BaseClickWebhookView(ClickWebhook):
         logger.info(f"Click payment cancelled: {transaction.transaction_id}")
 
 
-
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class BaseUzumWebhookView(UzumWebhook):
     """
     Default Uzum webhook view.
@@ -153,7 +157,7 @@ class BaseUzumWebhookView(UzumWebhook):
         """
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class BasePaynetWebhookView(PaynetWebhook):
     """
     Default Paynet webhook view.
@@ -197,7 +201,7 @@ class BasePaynetWebhookView(PaynetWebhook):
         """
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class BaseOctoWebhookView(OctoWebhook):
     """
     Default Octo webhook view.

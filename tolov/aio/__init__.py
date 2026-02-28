@@ -15,12 +15,12 @@ from tolov.aio._octo import OctoGateway
 from tolov.aio._uzum import UzumGateway
 
 __all__ = [
-    'AsyncHttpClient',
-    'PaymeGateway',
-    'PaymeCards',
-    'PaymeReceipts',
-    'ClickGateway',
-    'ClickMerchantApi',
-    'OctoGateway',
-    'UzumGateway',
+    "AsyncHttpClient",
+    "PaymeGateway",
+    "PaymeCards",
+    "PaymeReceipts",
+    "ClickGateway",
+    "ClickMerchantApi",
+    "OctoGateway",
+    "UzumGateway",
 ]

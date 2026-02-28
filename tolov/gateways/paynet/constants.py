@@ -1,5 +1,6 @@
 class PaynetErrors:
     """Paynet API error codes."""
+
     # JSON-RPC Errors
     METHOD_NOT_POST = -32300
     JSON_PARSING_ERROR = -32700

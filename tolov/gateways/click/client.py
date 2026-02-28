@@ -12,8 +12,6 @@ from tolov.gateways.click.merchant import ClickMerchantApi
 from tolov.gateways.click.internal import ClickGatewayInternal
 
 
-
-
 class ClickGateway(BasePaymentGateway):
     """
     Click payment gateway implementation.
@@ -56,7 +54,7 @@ class ClickGateway(BasePaymentGateway):
             http_client=self.http_client,
             service_id=self.service_id,
             merchant_user_id=self.merchant_user_id,
-            secret_key=self.secret_key
+            secret_key=self.secret_key,
         )
         self._internal = ClickGatewayInternal(
             service_id=self.service_id,
@@ -65,14 +63,11 @@ class ClickGateway(BasePaymentGateway):
             secret_key=self.secret_key,
             is_test_mode=self.is_test_mode,
             http_client=self.http_client,
-            merchant_api=self.merchant_api
+            merchant_api=self.merchant_api,
         )
 
     def create_payment(
-        self,
-        id: Union[int, str],
-        amount: Union[int, float, str],
-        **kwargs
+        self, id: Union[int, str], amount: Union[int, float, str], **kwargs
     ) -> str:
         """
         Create a payment using Click.
@@ -100,9 +95,7 @@ class ClickGateway(BasePaymentGateway):
         return self._internal.check_payment(transaction_id)
 
     def cancel_payment(
-        self,
-        transaction_id: str,
-        reason: Optional[str] = None
+        self, transaction_id: str, reason: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Cancel payment using Click merchant API.
@@ -117,10 +110,7 @@ class ClickGateway(BasePaymentGateway):
         return self._internal.cancel_payment(transaction_id, reason)
 
     def card_token_request(
-        self,
-        card_number: str,
-        expire_date: str,
-        temporary: int = 0
+        self, card_number: str, expire_date: str, temporary: int = 0
     ) -> Dict[str, Any]:
         """
         Request a card token for card payment.
@@ -136,9 +126,7 @@ class ClickGateway(BasePaymentGateway):
         return self._internal.card_token_request(card_number, expire_date, temporary)
 
     def card_token_verify(
-        self,
-        card_token: str,
-        sms_code: Union[int, str]
+        self, card_token: str, sms_code: Union[int, str]
     ) -> Dict[str, Any]:
         """
         Verify a card token with SMS code.
@@ -153,10 +141,7 @@ class ClickGateway(BasePaymentGateway):
         return self._internal.card_token_verify(card_token, sms_code)
 
     def card_token_payment(
-        self,
-        card_token: str,
-        amount: Union[int, float],
-        transaction_parameter: str
+        self, card_token: str, amount: Union[int, float], transaction_parameter: str
     ) -> Dict[str, Any]:
         """
         Make a payment using a verified card token.
@@ -169,4 +154,6 @@ class ClickGateway(BasePaymentGateway):
         Returns:
             Dict containing payment status and payment ID
         """
-        return self._internal.card_token_payment(card_token, amount, transaction_parameter)
+        return self._internal.card_token_payment(
+            card_token, amount, transaction_parameter
+        )

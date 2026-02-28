@@ -1,6 +1,6 @@
 [project]
 name = "tolov"
-version = "2.0.0"
+version = "2.0.1"
 description = "Accept payments from every major provider in Uzbekistan with a single, beautiful API. Payme, Click, Uzum, Paynet, Octo — sync & async."
 readme = "README.md"
 license = "MIT"

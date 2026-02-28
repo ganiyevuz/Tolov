@@ -9,7 +9,6 @@ from tolov.core.base import BasePaymentGateway
 from tolov.gateways.uzum.internal import UzumGatewayInternal
 
 
-
 class UzumGateway(BasePaymentGateway):
     """
     Uzum payment gateway implementation.
@@ -46,7 +45,7 @@ class UzumGateway(BasePaymentGateway):
             service_id=service_id,
             is_test_mode=is_test_mode,
             terminal_id=terminal_id,
-            api_key=api_key
+            api_key=api_key,
         )
 
     def create_payment(
@@ -83,17 +82,14 @@ class UzumGateway(BasePaymentGateway):
 
         Args:
             id: The order ID
-        
+
         Returns:
             Dict containing payment status
         """
         return self._internal.check_payment(id)
 
     def cancel_payment(
-        self,
-        id: str,
-        amount: int,
-        operation_id: Optional[str] = None
+        self, id: str, amount: int, operation_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Refund/Cancel payment using Uzum Checkout API.
@@ -102,7 +98,7 @@ class UzumGateway(BasePaymentGateway):
             id: The order ID or Invoice ID to refund
             amount: Amount to refund in tiyin
             operation_id: Optional unique operation ID (X-Operation-Id header)
-        
+
         Returns:
             Dict containing refund response
         """

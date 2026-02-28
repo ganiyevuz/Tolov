@@ -6,7 +6,6 @@ from loguru import logger
 from typing import Union, Optional
 
 
-
 class PaynetGatewayInternal:
     """Internal implementation of Paynet gateway logic."""
 
@@ -15,9 +14,7 @@ class PaynetGatewayInternal:
         self.is_test_mode = is_test_mode
 
     def generate_pay_link(
-        self,
-        id: Union[int, str],
-        amount: Optional[Union[int, float, str]] = None
+        self, id: Union[int, str], amount: Optional[Union[int, float, str]] = None
     ) -> str:
         """
         Generate a payment link for Paynet.

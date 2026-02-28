@@ -14,7 +14,6 @@ from tolov.gateways.octo.constants import (
 )
 
 
-
 class OctoGatewayInternal:
     """
     Internal implementation for Octo payment gateway.
@@ -151,10 +150,17 @@ class OctoGatewayInternal:
             Dict with ``octo_pay_url``, ``octo_payment_UUID``, ``status``, etc.
         """
         endpoint, payload = self._build_create_payment_request(
-            shop_transaction_id, amount, return_url,
-            currency=currency, description=description, basket=basket,
-            payment_methods=payment_methods, language=language, ttl=ttl,
-            user_data=user_data, **kwargs,
+            shop_transaction_id,
+            amount,
+            return_url,
+            currency=currency,
+            description=description,
+            basket=basket,
+            payment_methods=payment_methods,
+            language=language,
+            ttl=ttl,
+            user_data=user_data,
+            **kwargs,
         )
 
         response = self.http_client.post(
@@ -217,7 +223,9 @@ class OctoGatewayInternal:
             Dict with refund status and details.
         """
         endpoint, payload = self._build_refund_request(
-            octo_payment_uuid, amount, shop_refund_id,
+            octo_payment_uuid,
+            amount,
+            shop_refund_id,
         )
 
         response = self.http_client.post(

@@ -15,7 +15,6 @@ from .internal_webhooks import (
 )
 
 
-
 class PaymeWebhook(PaymeWebhookInternal):
     """
     Base Payme webhook handler for Django.
@@ -225,8 +224,6 @@ class ClickWebhook(ClickWebhookInternal):
         pass
 
 
-
-
 class UzumWebhook(UzumWebhookInternal):
     """
     Base Uzum webhook handler for Django.
@@ -239,7 +236,7 @@ class UzumWebhook(UzumWebhookInternal):
         def successfully_payment(self, params, transaction):
             # Your custom logic here
             print(f"Payment successful: {transaction.transaction_id}")
-            
+
         def get_check_data(self, params, account):
             return {
                 "fio": {
@@ -254,13 +251,14 @@ class UzumWebhook(UzumWebhookInternal):
 
     def cancelled_payment(self, params, transaction):
         pass
-        
+
     def get_check_data(self, params, account):
         """
         Override this method to return extra data in check response.
         By default returns empty dict.
         """
         pass
+
 
 class PaynetWebhook(PaynetWebhookInternal):
     """
@@ -363,4 +361,3 @@ class OctoWebhook(OctoWebhookInternal):
             transaction: PaymentTransaction object
         """
         pass
-

@@ -9,19 +9,20 @@ class PaymentTransaction(models.Model):
     """
     Payment transaction model for storing payment information.
     """
+
     # Payment gateway choices
-    PAYME = 'payme'
-    CLICK = 'click'
-    UZUM = 'uzum'
-    PAYNET = 'paynet'
-    OCTO = 'octo'
+    PAYME = "payme"
+    CLICK = "click"
+    UZUM = "uzum"
+    PAYNET = "paynet"
+    OCTO = "octo"
 
     GATEWAY_CHOICES = [
-        (PAYME, 'Payme'),
-        (CLICK, 'Click'),
-        (UZUM, 'Uzum'),
-        (PAYNET, 'Paynet'),
-        (OCTO, 'Octo'),
+        (PAYME, "Payme"),
+        (CLICK, "Click"),
+        (UZUM, "Uzum"),
+        (PAYNET, "Paynet"),
+        (OCTO, "Octo"),
     ]
 
     # Transaction states
@@ -55,11 +56,12 @@ class PaymentTransaction(models.Model):
         """
         Model Meta options.
         """
+
         verbose_name = "Payment Transaction"
         verbose_name_plural = "Payment Transactions"
         ordering = ["-created_at"]
         db_table = "payments"
-        unique_together = [['gateway', 'transaction_id']]
+        unique_together = [["gateway", "transaction_id"]]
 
     def __str__(self):
         """
@@ -110,14 +112,16 @@ class PaymentTransaction(models.Model):
 
                 # For backward compatibility, also store in extra_data
                 extra_data = self.extra_data or {}
-                extra_data['cancel_reason'] = reason_code
+                extra_data["cancel_reason"] = reason_code
                 self.extra_data = extra_data
 
             self.save()
         return self
 
     @classmethod
-    def create_transaction(cls, gateway, transaction_id, account_id, amount, extra_data=None):
+    def create_transaction(
+        cls, gateway, transaction_id, account_id, amount, extra_data=None
+    ):
         """
         Create a new transaction or get an existing one.
 
@@ -135,11 +139,11 @@ class PaymentTransaction(models.Model):
             gateway=gateway,
             transaction_id=transaction_id,
             defaults={
-                'account_id': str(account_id),
-                'amount': amount,
-                'state': cls.CREATED,
-                'extra_data': extra_data or {}
-            }
+                "account_id": str(account_id),
+                "amount": amount,
+                "state": cls.CREATED,
+                "extra_data": extra_data or {},
+            },
         )
 
         return transaction
@@ -159,7 +163,9 @@ class PaymentTransaction(models.Model):
             PaymentTransaction instance or None if not found
         """
         try:
-            transaction = cls.objects.get(gateway=gateway, transaction_id=transaction_id)
+            transaction = cls.objects.get(
+                gateway=gateway, transaction_id=transaction_id
+            )
 
             if state is not None:
                 transaction.state = state

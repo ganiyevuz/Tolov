@@ -8,9 +8,9 @@ from .paynet import PaynetWebhook
 from .octo import OctoWebhook
 
 __all__ = [
-    'PaymeWebhook',
-    'ClickWebhook',
-    'UzumWebhook',
-    'PaynetWebhook',
-    'OctoWebhook',
+    "PaymeWebhook",
+    "ClickWebhook",
+    "UzumWebhook",
+    "PaynetWebhook",
+    "OctoWebhook",
 ]

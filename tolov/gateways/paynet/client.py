@@ -10,8 +10,6 @@ from tolov.core.utils import handle_exceptions
 from tolov.gateways.paynet.internal import PaynetGatewayInternal
 
 
-
-
 class PaynetGateway(BasePaymentGateway):
     """
     Paynet payment gateway implementation.
@@ -21,10 +19,7 @@ class PaynetGateway(BasePaymentGateway):
     """
 
     def __init__(
-        self,
-        merchant_id: Union[str, int],
-        is_test_mode: bool = False,
-        **kwargs
+        self, merchant_id: Union[str, int], is_test_mode: bool = False, **kwargs
     ):
         """
         Initialize the Paynet gateway.
@@ -39,14 +34,11 @@ class PaynetGateway(BasePaymentGateway):
 
         # Initialize internal implementation
         self._internal = PaynetGatewayInternal(
-            merchant_id=self.merchant_id,
-            is_test_mode=is_test_mode
+            merchant_id=self.merchant_id, is_test_mode=is_test_mode
         )
 
     def generate_pay_link(
-        self,
-        id: Union[int, str],
-        amount: Optional[Union[int, float, str]] = None
+        self, id: Union[int, str], amount: Optional[Union[int, float, str]] = None
     ) -> str:
         """
         Generate a payment link for Paynet.
@@ -108,9 +100,7 @@ class PaynetGateway(BasePaymentGateway):
         )
 
     def cancel_payment(
-        self,
-        transaction_id: str,
-        reason: Optional[str] = None
+        self, transaction_id: str, reason: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Cancel payment.

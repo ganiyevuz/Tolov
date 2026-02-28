@@ -10,8 +10,6 @@ from tolov.core.http import HttpClient
 from tolov.gateways.uzum.constants import UzumNetworks, UzumEndpoints, UzumStatus
 
 
-
-
 class UzumGatewayInternal:
     """
     Internal Uzum gateway implementation with core business logic.
@@ -24,7 +22,7 @@ class UzumGatewayInternal:
         is_test_mode: bool = False,
         terminal_id: Optional[str] = None,
         api_key: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize the internal Uzum gateway.
@@ -47,7 +45,7 @@ class UzumGatewayInternal:
             headers = {
                 "X-Terminal-Id": terminal_id,
                 "X-API-Key": api_key,
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
             self.http_client = HttpClient(base_url=api_url, headers=headers)
         else:
@@ -58,7 +56,7 @@ class UzumGatewayInternal:
         id: Union[int, str],
         amount: Union[int, float, str],
         return_url: str = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Create a payment URL using Uzum Biller (open-service).
@@ -96,11 +94,13 @@ class UzumGatewayInternal:
 
         Args:
             id: The order ID
-        
+
         Returns:
             Dict containing payment status
         """
-        raise NotImplementedError("check_payment is not supported for Biller URL payments")
+        raise NotImplementedError(
+            "check_payment is not supported for Biller URL payments"
+        )
 
     def _build_cancel_payment_request(self, id, amount, operation_id=None):
         """Build ``(payload, headers)`` for cancel/refund."""
@@ -113,17 +113,11 @@ class UzumGatewayInternal:
         else:
             headers["X-Operation-Id"] = str(uuid.uuid4())
 
-        payload = {
-            "orderId": str(id),
-            "amount": int(amount)
-        }
+        payload = {"orderId": str(id), "amount": int(amount)}
         return payload, headers
 
     def cancel_payment(
-        self,
-        id: str,
-        amount: int,
-        operation_id: Optional[str] = None
+        self, id: str, amount: int, operation_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Refund/Cancel payment using Uzum Checkout API.
@@ -137,4 +131,6 @@ class UzumGatewayInternal:
             Dict containing refund response
         """
         payload, headers = self._build_cancel_payment_request(id, amount, operation_id)
-        return self.http_client.post(UzumEndpoints.REFUND, json_data=payload, headers=headers)
+        return self.http_client.post(
+            UzumEndpoints.REFUND, json_data=payload, headers=headers
+        )

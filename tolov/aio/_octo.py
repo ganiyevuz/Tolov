@@ -23,7 +23,8 @@ class OctoGatewayInternal(_SyncOctoInternal):
         response = await self.http_client.post(endpoint=endpoint, json_data=payload)
         logger.info(
             "Octo prepare_payment response for %s: error=%s",
-            shop_transaction_id, response.get("error"),
+            shop_transaction_id,
+            response.get("error"),
         )
         return response
 
@@ -32,7 +33,8 @@ class OctoGatewayInternal(_SyncOctoInternal):
         response = await self.http_client.post(endpoint=endpoint, json_data=payload)
         logger.info(
             "Octo check_payment response for %s: error=%s",
-            shop_transaction_id, response.get("error"),
+            shop_transaction_id,
+            response.get("error"),
         )
         return response
 
@@ -40,13 +42,16 @@ class OctoGatewayInternal(_SyncOctoInternal):
         self,
         octo_payment_uuid: str,
         amount: Union[int, float],
-        shop_refund_id: Optional[str] = None
+        shop_refund_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        endpoint, payload = self._build_refund_request(octo_payment_uuid, amount, shop_refund_id)
+        endpoint, payload = self._build_refund_request(
+            octo_payment_uuid, amount, shop_refund_id
+        )
         response = await self.http_client.post(endpoint=endpoint, json_data=payload)
         logger.info(
             "Octo refund response for %s: error=%s",
-            octo_payment_uuid, response.get("error"),
+            octo_payment_uuid,
+            response.get("error"),
         )
         return response
 
@@ -72,7 +77,10 @@ class OctoGateway(_SyncOctoGateway):
         **kwargs
     ) -> str:
         response = await self._internal.create_payment(
-            shop_transaction_id=id, amount=float(amount), return_url=return_url, **kwargs
+            shop_transaction_id=id,
+            amount=float(amount),
+            return_url=return_url,
+            **kwargs
         )
         data = response.get("data", {})
         return data.get("octo_pay_url", "")

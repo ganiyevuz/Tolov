@@ -6,6 +6,7 @@ from enum import Enum
 
 class TransactionState(Enum):
     """Transaction states."""
+
     CREATED = 0
     INITIATING = 1
     SUCCESSFULLY = 2
@@ -15,6 +16,7 @@ class TransactionState(Enum):
 
 class PaymentGateway(Enum):
     """Payment gateway types."""
+
     PAYME = "payme"
     CLICK = "click"
     UZUM = "uzum"

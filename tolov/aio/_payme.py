@@ -14,13 +14,11 @@ class PaymeCards(_SyncPaymeCards):
 
     @handle_exceptions
     async def create(
-        self,
-        card_number: str,
-        expire_date: str,
-        save: bool = True,
-        **kwargs
+        self, card_number: str, expire_date: str, save: bool = True, **kwargs
     ) -> Dict[str, Any]:
-        data, headers = self._build_create_request(card_number, expire_date, save, **kwargs)
+        data, headers = self._build_create_request(
+            card_number, expire_date, save, **kwargs
+        )
         return await self.http_client.post(endpoint="", json_data=data, headers=headers)
 
     @handle_exceptions
@@ -48,7 +46,9 @@ class PaymeReceipts(_SyncPaymeReceipts):
     """Async Payme receipts — inherits __init__, helpers, and _build_* methods."""
 
     @handle_exceptions
-    async def create(self, amount: int, account: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    async def create(
+        self, amount: int, account: Dict[str, Any], **kwargs
+    ) -> Dict[str, Any]:
         data, headers = self._build_create_request(amount, account, **kwargs)
         return await self.http_client.post(endpoint="", json_data=data, headers=headers)
 
@@ -69,10 +69,7 @@ class PaymeReceipts(_SyncPaymeReceipts):
 
     @handle_exceptions
     async def cancel(
-        self,
-        receipt_id: str,
-        reason: Optional[str] = None,
-        **kwargs
+        self, receipt_id: str, reason: Optional[str] = None, **kwargs
     ) -> Dict[str, Any]:
         data, headers = self._build_cancel_request(receipt_id, reason, **kwargs)
         return await self.http_client.post(endpoint="", json_data=data, headers=headers)
@@ -113,12 +110,11 @@ class PaymeGateway(_SyncPaymeGateway):
 
     @handle_exceptions
     async def cancel_payment(
-        self,
-        transaction_id: str,
-        reason: Optional[str] = None
+        self, transaction_id: str, reason: Optional[str] = None
     ) -> Dict[str, Any]:
         receipt_data = await self.receipts.cancel(
-            receipt_id=transaction_id,
-            reason=reason or "Cancelled by merchant"
+            receipt_id=transaction_id, reason=reason or "Cancelled by merchant"
         )
-        return PaymeGatewayInternal.process_cancel_response(receipt_data, transaction_id)
+        return PaymeGatewayInternal.process_cancel_response(
+            receipt_data, transaction_id
+        )

@@ -28,10 +28,7 @@ class BasePaymentGateway(ABC):
 
     @abstractmethod
     def create_payment(
-        self,
-        id: Union[int, str],
-        amount: Union[int, float, str],
-        **kwargs
+        self, id: Union[int, str], amount: Union[int, float, str], **kwargs
     ) -> Dict[str, Any]:
         """
         Create a payment.
@@ -61,9 +58,7 @@ class BasePaymentGateway(ABC):
 
     @abstractmethod
     def cancel_payment(
-        self,
-        transaction_id: str,
-        reason: Optional[str] = None
+        self, transaction_id: str, reason: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Cancel payment.
@@ -111,7 +106,7 @@ class BasePaymentProcessor:
         self,
         auth_header: Optional[str],
         expected_username: Optional[str] = None,
-        expected_password: Optional[str] = None
+        expected_password: Optional[str] = None,
     ) -> None:
         """
         Check Basic Authentication.
@@ -129,18 +124,18 @@ class BasePaymentProcessor:
 
         try:
             parts = auth_header.split()
-            if len(parts) != 2 or parts[0].lower() != 'basic':
+            if len(parts) != 2 or parts[0].lower() != "basic":
                 raise PermissionDenied("Invalid authentication format")
 
             try:
-                decoded = base64.b64decode(parts[1]).decode('utf-8')
+                decoded = base64.b64decode(parts[1]).decode("utf-8")
             except Exception:
                 raise PermissionDenied("Invalid base64 encoding")
 
-            if ':' not in decoded:
+            if ":" not in decoded:
                 raise PermissionDenied("Invalid credentials format")
 
-            username, password = decoded.split(':', 1)
+            username, password = decoded.split(":", 1)
 
             if expected_username is not None and username != expected_username:
                 raise PermissionDenied("Invalid credentials")

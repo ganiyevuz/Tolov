@@ -14,11 +14,12 @@ class PaymentTransaction(Base):
     """
     Payment transaction model for storing payment information.
     """
+
     __tablename__ = "payments"
 
     # Payment gateway choices
-    PAYME = 'payme'
-    CLICK = 'click'
+    PAYME = "payme"
+    CLICK = "click"
 
     # Transaction states
     CREATED = 0
@@ -37,9 +38,7 @@ class PaymentTransaction(Base):
     extra_data = Column(JSON, default={})
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow, index=True
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, index=True
     )
     performed_at = Column(DateTime, nullable=True, index=True)
     cancelled_at = Column(DateTime, nullable=True, index=True)
@@ -52,7 +51,7 @@ class PaymentTransaction(Base):
         transaction_id: str,
         account_id: str,
         amount: float,
-        extra_data: Optional[Dict[str, Any]] = None
+        extra_data: Optional[Dict[str, Any]] = None,
     ) -> "PaymentTransaction":
         """
         Create a new transaction or get an existing one.
@@ -69,10 +68,11 @@ class PaymentTransaction(Base):
             PaymentTransaction instance
         """
         # Check if transaction already exists
-        transaction = db.query(cls).filter(
-            cls.gateway == gateway,
-            cls.transaction_id == transaction_id
-        ).first()
+        transaction = (
+            db.query(cls)
+            .filter(cls.gateway == gateway, cls.transaction_id == transaction_id)
+            .first()
+        )
 
         if transaction:
             return transaction
@@ -84,7 +84,7 @@ class PaymentTransaction(Base):
             account_id=str(account_id),
             amount=amount,
             state=cls.CREATED,
-            extra_data=extra_data or {}
+            extra_data=extra_data or {},
         )
 
         db.add(transaction)
@@ -147,7 +147,7 @@ class PaymentTransaction(Base):
 
         # For backward compatibility, also store in extra_data
         extra_data = self.extra_data or {}
-        extra_data['cancel_reason'] = reason_code
+        extra_data["cancel_reason"] = reason_code
         self.extra_data = extra_data
 
         db.commit()

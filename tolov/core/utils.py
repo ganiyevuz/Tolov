@@ -12,8 +12,6 @@ from datetime import datetime
 from typing import Dict, Any, Union, Optional
 
 
-
-
 def generate_timestamp() -> int:
     """
     Generate a Unix timestamp.
@@ -99,9 +97,7 @@ def timestamp_to_datetime(timestamp: int) -> datetime:
 
 
 def generate_hmac_signature(
-    data: Union[str, Dict[str, Any], bytes],
-    secret_key: str,
-    algorithm: str = "sha256"
+    data: Union[str, Dict[str, Any], bytes], secret_key: str, algorithm: str = "sha256"
 ) -> str:
     """
     Generate HMAC signature.
@@ -115,12 +111,12 @@ def generate_hmac_signature(
         HMAC signature as hexadecimal string
     """
     if isinstance(data, dict):
-        data = json.dumps(data, separators=(',', ':'))
+        data = json.dumps(data, separators=(",", ":"))
 
     if isinstance(data, str):
-        data = data.encode('utf-8')
+        data = data.encode("utf-8")
 
-    key = secret_key.encode('utf-8')
+    key = secret_key.encode("utf-8")
 
     if algorithm.lower() == "sha256":
         signature = hmac.new(key, data, hashlib.sha256).hexdigest()
@@ -146,8 +142,8 @@ def generate_basic_auth(username: str, password: str) -> str:
         Basic Authentication header value
     """
     auth_str = f"{username}:{password}"
-    auth_bytes = auth_str.encode('utf-8')
-    encoded = base64.b64encode(auth_bytes).decode('utf-8')
+    auth_bytes = auth_str.encode("utf-8")
+    encoded = base64.b64encode(auth_bytes).decode("utf-8")
     return f"Basic {encoded}"
 
 
@@ -165,12 +161,10 @@ def handle_exceptions(func):
     """
     import functools
     import inspect
-    from .exceptions import (
-        InternalServiceError,
-        exception_whitelist
-    )
+    from .exceptions import InternalServiceError, exception_whitelist
 
     if inspect.iscoroutinefunction(func):
+
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
             try:
@@ -180,6 +174,7 @@ def handle_exceptions(func):
             except Exception as exc:
                 logger.exception(f"Unexpected error in {func.__name__}: {exc}")
                 raise InternalServiceError(str(exc))
+
         return async_wrapper
 
     @functools.wraps(func)
@@ -195,7 +190,9 @@ def handle_exceptions(func):
     return wrapper
 
 
-def validate_required_fields(data: Dict[str, Any], required_fields: list) -> Optional[str]:
+def validate_required_fields(
+    data: Dict[str, Any], required_fields: list
+) -> Optional[str]:
     """
     Validate that all required fields are present in the data.
 
@@ -206,7 +203,9 @@ def validate_required_fields(data: Dict[str, Any], required_fields: list) -> Opt
     Returns:
         Error message if validation fails, None otherwise
     """
-    missing_fields = [field for field in required_fields if field not in data or data[field] is None]
+    missing_fields = [
+        field for field in required_fields if field not in data or data[field] is None
+    ]
     if missing_fields:
         return f"Missing required fields: {', '.join(missing_fields)}"
     return None

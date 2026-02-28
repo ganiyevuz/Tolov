@@ -26,22 +26,16 @@ def handle_transaction_state_change(sender, instance, created, **kwargs):
     """
     # Skip if the transaction was just created
     if created:
-        payment_created.send(
-            sender=sender,
-            transaction=instance
-        )
+        payment_created.send(sender=sender, transaction=instance)
         return
 
     # Check if the transaction was marked as paid
     if instance.state == PaymentTransaction.SUCCESSFULLY:
-        payment_successful.send(
-            sender=sender,
-            transaction=instance
-        )
+        payment_successful.send(sender=sender, transaction=instance)
 
     # Check if the transaction was marked as cancelled
-    elif instance.state in [PaymentTransaction.CANCELLED, PaymentTransaction.CANCELLED_DURING_INIT]:
-        payment_cancelled.send(
-            sender=sender,
-            transaction=instance
-        )
+    elif instance.state in [
+        PaymentTransaction.CANCELLED,
+        PaymentTransaction.CANCELLED_DURING_INIT,
+    ]:
+        payment_cancelled.send(sender=sender, transaction=instance)

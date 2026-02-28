@@ -21,7 +21,6 @@ from tolov.gateways.octo.client import OctoGateway
 from tolov.gateways.octo.constants import OctoStatus
 
 
-
 class OctoWebhook(View):
     """
     Internal Octo webhook handler.
@@ -45,7 +44,13 @@ class OctoWebhook(View):
     Signature verification:
         ``sha1(unique_key + octo_payment_UUID + status)``
     """
-    REQUIRED_FIELDS = ("octo_payment_UUID", "shop_transaction_id", "status", "total_sum")
+
+    REQUIRED_FIELDS = (
+        "octo_payment_UUID",
+        "shop_transaction_id",
+        "status",
+        "total_sum",
+    )
     VALID_STATUSES = {
         OctoStatus.CREATED,
         OctoStatus.WAITING_PAY,
@@ -58,13 +63,13 @@ class OctoWebhook(View):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        octo_settings = settings.TOLOV.get('OCTO_BANK', {})
+        octo_settings = settings.TOLOV.get("OCTO_BANK", {})
 
-        self.octo_shop_id = octo_settings.get('OCTO_SHOP_ID', '')
-        self.octo_secret = octo_settings.get('OCTO_SECRET', '')
-        self.unique_key = octo_settings.get('OCTO_UNIQUE_KEY', '')
-        self.notify_url = octo_settings.get('NOTIFY_URL', '')
-        self.is_test_mode = octo_settings.get('TEST_MODE', False)
+        self.octo_shop_id = octo_settings.get("OCTO_SHOP_ID", "")
+        self.octo_secret = octo_settings.get("OCTO_SECRET", "")
+        self.unique_key = octo_settings.get("OCTO_UNIQUE_KEY", "")
+        self.notify_url = octo_settings.get("NOTIFY_URL", "")
+        self.is_test_mode = octo_settings.get("TEST_MODE", False)
 
         if not self.octo_shop_id:
             raise ValueError("TOLOV['OCTO_BANK']['OCTO_SHOP_ID'] is required")
@@ -72,7 +77,7 @@ class OctoWebhook(View):
             raise ValueError("TOLOV['OCTO_BANK']['OCTO_SECRET'] is required")
 
         # Account model settings (like Payme / Click)
-        account_model_path = octo_settings.get('ACCOUNT_MODEL')
+        account_model_path = octo_settings.get("ACCOUNT_MODEL")
         if not account_model_path:
             raise ValueError("TOLOV['OCTO_BANK']['ACCOUNT_MODEL'] is required")
         try:
@@ -85,9 +90,9 @@ class OctoWebhook(View):
             if account_model_path:
                 raise ImportError(f"Import error: {account_model_path}") from None
 
-        self.account_field = octo_settings.get('ACCOUNT_FIELD', 'id')
-        self.amount_field = octo_settings.get('AMOUNT_FIELD', 'amount')
-        self.one_time_payment = octo_settings.get('ONE_TIME_PAYMENT', True)
+        self.account_field = octo_settings.get("ACCOUNT_FIELD", "id")
+        self.amount_field = octo_settings.get("AMOUNT_FIELD", "amount")
+        self.one_time_payment = octo_settings.get("ONE_TIME_PAYMENT", True)
 
         if self.is_test_mode:
             logger.warning(
@@ -144,14 +149,18 @@ class OctoWebhook(View):
             return self._error_response(str(exc), status=400, code="invalid_payload")
         except Exception as exc:
             logger.exception("Unexpected error in Octo webhook: %s", exc)
-            return self._error_response("Internal error", status=500, code="internal_error")
+            return self._error_response(
+                "Internal error", status=500, code="internal_error"
+            )
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _error_response(message: str, status: int = 400, code: str = "") -> JsonResponse:
+    def _error_response(
+        message: str, status: int = 400, code: str = ""
+    ) -> JsonResponse:
         payload = {"error": message}
         if code:
             payload["code"] = code
@@ -159,10 +168,12 @@ class OctoWebhook(View):
 
     @staticmethod
     def _ok_response(transaction: PaymentTransaction) -> JsonResponse:
-        return JsonResponse({
-            "status": "ok",
-            "transaction_status": transaction.state,
-        })
+        return JsonResponse(
+            {
+                "status": "ok",
+                "transaction_status": transaction.state,
+            }
+        )
 
     @staticmethod
     def _parse_request(request) -> Dict[str, Any]:
@@ -209,7 +220,9 @@ class OctoWebhook(View):
             raise PermissionDenied("Invalid signature")
 
     def _validate_payload(self, data: Dict[str, Any]) -> None:
-        missing_fields = [field for field in self.REQUIRED_FIELDS if data.get(field) in (None, "")]
+        missing_fields = [
+            field for field in self.REQUIRED_FIELDS if data.get(field) in (None, "")
+        ]
         if missing_fields:
             raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
 
@@ -224,7 +237,11 @@ class OctoWebhook(View):
         if amount < Decimal("0"):
             raise InvalidAmount("total_sum must be non-negative")
 
-        if data["status"] in {OctoStatus.CREATED, OctoStatus.WAITING_PAY, OctoStatus.SUCCEEDED} and amount <= Decimal("0"):
+        if data["status"] in {
+            OctoStatus.CREATED,
+            OctoStatus.WAITING_PAY,
+            OctoStatus.SUCCEEDED,
+        } and amount <= Decimal("0"):
             raise InvalidAmount("total_sum must be positive")
 
         data["total_sum"] = amount
@@ -245,14 +262,16 @@ class OctoWebhook(View):
         """Find the account (order) from ACCOUNT_MODEL by ACCOUNT_FIELD."""
         try:
             lookup_value = account_id
-            if self.account_field == 'id':
+            if self.account_field == "id":
                 if isinstance(account_id, str) and account_id.isdigit():
                     lookup_value = int(account_id)
 
             lookup_kwargs = {self.account_field: lookup_value}
             return self.account_model._default_manager.get(**lookup_kwargs)
         except (self.account_model.DoesNotExist, ValueError):
-            raise AccountNotFound(f"Account not found for {self.account_field}={account_id}") from None
+            raise AccountNotFound(
+                f"Account not found for {self.account_field}={account_id}"
+            ) from None
 
     @staticmethod
     def _parse_decimal(value: Any, field_name: str) -> Decimal:
@@ -273,7 +292,9 @@ class OctoWebhook(View):
                     received,
                     expected,
                 )
-                raise InvalidAmount(f"Amount mismatch: received={received}, expected={expected}")
+                raise InvalidAmount(
+                    f"Amount mismatch: received={received}, expected={expected}"
+                )
             return
 
         if received <= Decimal("0"):
@@ -319,7 +340,10 @@ class OctoWebhook(View):
                 PaymentTransaction.CANCELLED_DURING_INIT,
             ):
                 # Allow explicit refund callback to move SUCCESSFULLY -> CANCELLED.
-                if status == OctoStatus.REFUNDED and transaction.state == PaymentTransaction.SUCCESSFULLY:
+                if (
+                    status == OctoStatus.REFUNDED
+                    and transaction.state == PaymentTransaction.SUCCESSFULLY
+                ):
                     pass
                 else:
                     logger.info(

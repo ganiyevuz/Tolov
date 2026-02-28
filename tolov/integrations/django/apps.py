@@ -8,10 +8,11 @@ class TolovConfig(AppConfig):
     """
     Django app configuration for Tolov.
     """
-    name = 'tolov.integrations.django'
-    verbose_name = 'Tolov'
 
-    default_auto_field = 'django.db.models.AutoField'
+    name = "tolov.integrations.django"
+    verbose_name = "Tolov"
+
+    default_auto_field = "django.db.models.AutoField"
 
     def ready(self):
         """

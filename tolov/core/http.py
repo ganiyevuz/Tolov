@@ -10,7 +10,7 @@ import httpx
 from tolov.core.exceptions import (
     ExternalServiceError,
     TimeoutError as PaymentTimeoutError,
-    InternalServiceError
+    InternalServiceError,
 )
 
 
@@ -44,8 +44,7 @@ def _handle_response(response: httpx.Response) -> Dict[str, Any]:
             error_data = {"raw_response": response.text}
 
         raise ExternalServiceError(
-            message=f"HTTP error: {response.status_code}",
-            data=error_data
+            message=f"HTTP error: {response.status_code}", data=error_data
         )
 
 
@@ -63,9 +62,9 @@ class HttpClient:
         base_url: str,
         headers: Optional[Dict[str, str]] = None,
         timeout: int = 30,
-        verify_ssl: bool = True
+        verify_ssl: bool = True,
     ):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.headers = headers or {}
         self.timeout = timeout
         self.verify_ssl = verify_ssl
@@ -82,7 +81,7 @@ class HttpClient:
         self.close()
 
     def _build_url(self, endpoint: str) -> str:
-        endpoint = endpoint.lstrip('/')
+        endpoint = endpoint.lstrip("/")
         return f"{self.base_url}/{endpoint}"
 
     def request(
@@ -93,7 +92,7 @@ class HttpClient:
         data: Optional[Union[Dict[str, Any], List[Any]]] = None,
         headers: Optional[Dict[str, str]] = None,
         json_data: Optional[Union[Dict[str, Any], List[Any]]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         url = self._build_url(endpoint)
         request_headers = {**self.headers}
@@ -128,14 +127,14 @@ class HttpClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         return self.request(
             method="GET",
             endpoint=endpoint,
             params=params,
             headers=headers,
-            timeout=timeout
+            timeout=timeout,
         )
 
     def post(
@@ -145,7 +144,7 @@ class HttpClient:
         json_data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         return self.request(
             method="POST",
@@ -154,7 +153,7 @@ class HttpClient:
             json_data=json_data,
             params=params,
             headers=headers,
-            timeout=timeout
+            timeout=timeout,
         )
 
     def put(
@@ -164,7 +163,7 @@ class HttpClient:
         json_data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         return self.request(
             method="PUT",
@@ -173,7 +172,7 @@ class HttpClient:
             json_data=json_data,
             params=params,
             headers=headers,
-            timeout=timeout
+            timeout=timeout,
         )
 
     def delete(
@@ -181,14 +180,14 @@ class HttpClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         return self.request(
             method="DELETE",
             endpoint=endpoint,
             params=params,
             headers=headers,
-            timeout=timeout
+            timeout=timeout,
         )
 
 
@@ -206,9 +205,9 @@ class AsyncHttpClient:
         base_url: str,
         headers: Optional[Dict[str, str]] = None,
         timeout: int = 30,
-        verify_ssl: bool = True
+        verify_ssl: bool = True,
     ):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.headers = headers or {}
         self.timeout = timeout
         self.verify_ssl = verify_ssl
@@ -225,7 +224,7 @@ class AsyncHttpClient:
         await self.aclose()
 
     def _build_url(self, endpoint: str) -> str:
-        endpoint = endpoint.lstrip('/')
+        endpoint = endpoint.lstrip("/")
         return f"{self.base_url}/{endpoint}"
 
     async def request(
@@ -236,7 +235,7 @@ class AsyncHttpClient:
         data: Optional[Union[Dict[str, Any], List[Any]]] = None,
         headers: Optional[Dict[str, str]] = None,
         json_data: Optional[Union[Dict[str, Any], List[Any]]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         url = self._build_url(endpoint)
         request_headers = {**self.headers}
@@ -271,14 +270,14 @@ class AsyncHttpClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         return await self.request(
             method="GET",
             endpoint=endpoint,
             params=params,
             headers=headers,
-            timeout=timeout
+            timeout=timeout,
         )
 
     async def post(
@@ -288,7 +287,7 @@ class AsyncHttpClient:
         json_data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         return await self.request(
             method="POST",
@@ -297,7 +296,7 @@ class AsyncHttpClient:
             json_data=json_data,
             params=params,
             headers=headers,
-            timeout=timeout
+            timeout=timeout,
         )
 
     async def put(
@@ -307,7 +306,7 @@ class AsyncHttpClient:
         json_data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         return await self.request(
             method="PUT",
@@ -316,7 +315,7 @@ class AsyncHttpClient:
             json_data=json_data,
             params=params,
             headers=headers,
-            timeout=timeout
+            timeout=timeout,
         )
 
     async def delete(
@@ -324,12 +323,12 @@ class AsyncHttpClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         return await self.request(
             method="DELETE",
             endpoint=endpoint,
             params=params,
             headers=headers,
-            timeout=timeout
+            timeout=timeout,
         )
