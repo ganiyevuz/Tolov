@@ -2,14 +2,11 @@
 Click merchant API operations.
 """
 import hashlib
-from loguru import logger
 from typing import Dict, Any, Optional, Union
 
 from tolov.core.http import HttpClient
-from tolov.gateways.click.constants import ClickEndpoints
 from tolov.core.utils import handle_exceptions, generate_timestamp
-
-
+from tolov.gateways.click.constants import ClickEndpoints
 
 
 class ClickMerchantApi:
@@ -21,11 +18,11 @@ class ClickMerchantApi:
     """
 
     def __init__(
-        self,
-        http_client: HttpClient,
-        service_id: str,
-        merchant_user_id: Optional[str] = None,
-        secret_key: Optional[str] = None
+            self,
+            http_client: HttpClient,
+            service_id: str,
+            merchant_user_id: Optional[str] = None,
+            secret_key: Optional[str] = None,
     ):
         """
         Initialize the Click merchant API.
@@ -69,6 +66,16 @@ class ClickMerchantApi:
         # Generate signature
         return hashlib.md5(sign_string.encode('utf-8')).hexdigest()
 
+    def _build_check_payment_request(self, id):
+        data = {
+            "service_id": self.service_id,
+            "merchant_transaction_id": str(id),
+            "request_id": str(generate_timestamp())
+        }
+        if self.secret_key:
+            data["sign"] = self._generate_signature(data)
+        return f"{ClickEndpoints.MERCHANT_API}/payment/status", data
+
     @handle_exceptions
     def check_payment(self, id: Union[int, str]) -> Dict[str, Any]:
         """
@@ -80,30 +87,26 @@ class ClickMerchantApi:
         Returns:
             Dict containing payment status and details
         """
-        # Prepare request data
+        endpoint, data = self._build_check_payment_request(id)
+        return self.http_client.post(endpoint=endpoint, json_data=data)
+
+    def _build_cancel_payment_request(self, id, reason=None):
         data = {
             "service_id": self.service_id,
             "merchant_transaction_id": str(id),
             "request_id": str(generate_timestamp())
         }
-
-        # Add signature if secret key is provided
+        if reason:
+            data["reason"] = reason
         if self.secret_key:
             data["sign"] = self._generate_signature(data)
-
-        # Make request
-        response = self.http_client.post(
-            endpoint=f"{ClickEndpoints.MERCHANT_API}/payment/status",
-            json_data=data
-        )
-
-        return response
+        return f"{ClickEndpoints.MERCHANT_API}/payment/cancel", data
 
     @handle_exceptions
     def cancel_payment(
-        self,
-        id: Union[int, str],
-        reason: Optional[str] = None
+            self,
+            id: Union[int, str],
+            reason: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Cancel payment.
@@ -115,35 +118,37 @@ class ClickMerchantApi:
         Returns:
             Dict containing cancellation status and details
         """
-        # Prepare request data
+        endpoint, data = self._build_cancel_payment_request(id, reason)
+        return self.http_client.post(endpoint=endpoint, json_data=data)
+
+    def _build_create_invoice_request(self, id, amount, **kwargs):
+        description = kwargs.get('description', f'Payment for account {id}')
+        phone = kwargs.get('phone')
+        email = kwargs.get('email')
+        expire_time = kwargs.get('expire_time', 60)
+
         data = {
             "service_id": self.service_id,
+            "amount": float(amount),
             "merchant_transaction_id": str(id),
-            "request_id": str(generate_timestamp())
+            "description": description,
+            "request_id": str(generate_timestamp()),
+            "expire_time": expire_time
         }
-
-        # Add reason if provided
-        if reason:
-            data["reason"] = reason
-
-        # Add signature if secret key is provided
+        if phone:
+            data["phone"] = phone
+        if email:
+            data["email"] = email
         if self.secret_key:
             data["sign"] = self._generate_signature(data)
-
-        # Make request
-        response = self.http_client.post(
-            endpoint=f"{ClickEndpoints.MERCHANT_API}/payment/cancel",
-            json_data=data
-        )
-
-        return response
+        return f"{ClickEndpoints.MERCHANT_API}/invoice/create", data
 
     @handle_exceptions
     def create_invoice(
-        self,
-        id: Union[int, str],
-        amount: Union[int, float],
-        **kwargs
+            self,
+            id: Union[int, str],
+            amount: Union[int, float],
+            **kwargs
     ) -> Dict[str, Any]:
         """
         Create an invoice.
@@ -160,40 +165,18 @@ class ClickMerchantApi:
         Returns:
             Dict containing invoice details
         """
-        # Extract additional parameters
-        description = kwargs.get('description', f'Payment for account {id}')
-        phone = kwargs.get('phone')
-        email = kwargs.get('email')
-        expire_time = kwargs.get('expire_time', 60)  # Default 1 hour
+        endpoint, data = self._build_create_invoice_request(id, amount, **kwargs)
+        return self.http_client.post(endpoint=endpoint, json_data=data)
 
-        # Prepare request data
+    def _build_check_invoice_request(self, invoice_id):
         data = {
             "service_id": self.service_id,
-            "amount": float(amount),
-            "merchant_transaction_id": str(id),
-            "description": description,
-            "request_id": str(generate_timestamp()),
-            "expire_time": expire_time
+            "invoice_id": invoice_id,
+            "request_id": str(generate_timestamp())
         }
-
-        # Add optional parameters
-        if phone:
-            data["phone"] = phone
-
-        if email:
-            data["email"] = email
-
-        # Add signature if secret key is provided
         if self.secret_key:
             data["sign"] = self._generate_signature(data)
-
-        # Make request
-        response = self.http_client.post(
-            endpoint=f"{ClickEndpoints.MERCHANT_API}/invoice/create",
-            json_data=data
-        )
-
-        return response
+        return f"{ClickEndpoints.MERCHANT_API}/invoice/status", data
 
     @handle_exceptions
     def check_invoice(self, invoice_id: str) -> Dict[str, Any]:
@@ -206,30 +189,26 @@ class ClickMerchantApi:
         Returns:
             Dict containing invoice status and details
         """
-        # Prepare request data
+        endpoint, data = self._build_check_invoice_request(invoice_id)
+        return self.http_client.post(endpoint=endpoint, json_data=data)
+
+    def _build_cancel_invoice_request(self, invoice_id, reason=None):
         data = {
             "service_id": self.service_id,
             "invoice_id": invoice_id,
             "request_id": str(generate_timestamp())
         }
-
-        # Add signature if secret key is provided
+        if reason:
+            data["reason"] = reason
         if self.secret_key:
             data["sign"] = self._generate_signature(data)
-
-        # Make request
-        response = self.http_client.post(
-            endpoint=f"{ClickEndpoints.MERCHANT_API}/invoice/status",
-            json_data=data
-        )
-
-        return response
+        return f"{ClickEndpoints.MERCHANT_API}/invoice/cancel", data
 
     @handle_exceptions
     def cancel_invoice(
-        self,
-        invoice_id: str,
-        reason: Optional[str] = None
+            self,
+            invoice_id: str,
+            reason: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Cancel invoice.
@@ -241,35 +220,26 @@ class ClickMerchantApi:
         Returns:
             Dict containing cancellation status and details
         """
-        # Prepare request data
+        endpoint, data = self._build_cancel_invoice_request(invoice_id, reason)
+        return self.http_client.post(endpoint=endpoint, json_data=data)
+
+    def _build_card_token_request_request(self, card_number, expire_date, temporary):
         data = {
             "service_id": self.service_id,
-            "invoice_id": invoice_id,
-            "request_id": str(generate_timestamp())
+            "card_number": card_number,
+            "expire_date": expire_date,
+            "temporary": temporary
         }
-
-        # Add reason if provided
-        if reason:
-            data["reason"] = reason
-
-        # Add signature if secret key is provided
         if self.secret_key:
             data["sign"] = self._generate_signature(data)
-
-        # Make request
-        response = self.http_client.post(
-            endpoint=f"{ClickEndpoints.MERCHANT_API}/invoice/cancel",
-            json_data=data
-        )
-
-        return response
+        return f"{ClickEndpoints.MERCHANT_API}/card_token/request", data
 
     @handle_exceptions
     def card_token_request(
-        self,
-        card_number: str,
-        expire_date: str,
-        temporary: int = 0
+            self,
+            card_number: str,
+            expire_date: str,
+            temporary: int = 0
     ) -> Dict[str, Any]:
         """
         Request a card token for card payment.
@@ -282,28 +252,24 @@ class ClickMerchantApi:
         Returns:
             Dict containing card token and related information
         """
+        endpoint, data = self._build_card_token_request_request(card_number, expire_date, temporary)
+        return self.http_client.post(endpoint=endpoint, json_data=data)
+
+    def _build_card_token_verify_request(self, card_token, sms_code):
         data = {
             "service_id": self.service_id,
-            "card_number": card_number,
-            "expire_date": expire_date,
-            "temporary": temporary
+            "card_token": card_token,
+            "sms_code": int(sms_code)
         }
-
         if self.secret_key:
             data["sign"] = self._generate_signature(data)
-
-        response = self.http_client.post(
-            endpoint=f"{ClickEndpoints.MERCHANT_API}/card_token/request",
-            json_data=data
-        )
-
-        return response
+        return f"{ClickEndpoints.MERCHANT_API}/card_token/verify", data
 
     @handle_exceptions
     def card_token_verify(
-        self,
-        card_token: str,
-        sms_code: Union[int, str]
+            self,
+            card_token: str,
+            sms_code: Union[int, str]
     ) -> Dict[str, Any]:
         """
         Verify a card token with SMS code.
@@ -315,28 +281,26 @@ class ClickMerchantApi:
         Returns:
             Dict containing verification status and card information
         """
+        endpoint, data = self._build_card_token_verify_request(card_token, sms_code)
+        return self.http_client.post(endpoint=endpoint, json_data=data)
+
+    def _build_card_token_payment_request(self, card_token, amount, transaction_parameter):
         data = {
             "service_id": self.service_id,
             "card_token": card_token,
-            "sms_code": int(sms_code)
+            "amount": float(amount),
+            "transaction_parameter": transaction_parameter
         }
-
         if self.secret_key:
             data["sign"] = self._generate_signature(data)
-
-        response = self.http_client.post(
-            endpoint=f"{ClickEndpoints.MERCHANT_API}/card_token/verify",
-            json_data=data
-        )
-
-        return response
+        return f"{ClickEndpoints.MERCHANT_API}/card_token/payment", data
 
     @handle_exceptions
     def card_token_payment(
-        self,
-        card_token: str,
-        amount: Union[int, float],
-        transaction_parameter: str
+            self,
+            card_token: str,
+            amount: Union[int, float],
+            transaction_parameter: str
     ) -> Dict[str, Any]:
         """
         Make a payment using a verified card token.
@@ -349,19 +313,5 @@ class ClickMerchantApi:
         Returns:
             Dict containing payment status and payment ID
         """
-        data = {
-            "service_id": self.service_id,
-            "card_token": card_token,
-            "amount": float(amount),
-            "transaction_parameter": transaction_parameter
-        }
-
-        if self.secret_key:
-            data["sign"] = self._generate_signature(data)
-
-        response = self.http_client.post(
-            endpoint=f"{ClickEndpoints.MERCHANT_API}/card_token/payment",
-            json_data=data
-        )
-
-        return response
+        endpoint, data = self._build_card_token_payment_request(card_token, amount, transaction_parameter)
+        return self.http_client.post(endpoint=endpoint, json_data=data)

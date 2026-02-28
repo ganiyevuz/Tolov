@@ -33,9 +33,9 @@ def check_dependencies(framework: str, raise_error: bool = False) -> bool:
             'manual_install': 'pip install django'
         },
         'fastapi': {
-            'packages': ['fastapi', 'sqlalchemy', 'httpx', 'pydantic'],
+            'packages': ['fastapi', 'sqlalchemy', 'pydantic'],
             'install_cmd': 'pip install tolov[fastapi]',
-            'manual_install': 'pip install fastapi sqlalchemy httpx pydantic python-multipart'
+            'manual_install': 'pip install fastapi sqlalchemy pydantic python-multipart'
         },
         'flask': {
             'packages': ['flask', 'flask_sqlalchemy'],
@@ -107,7 +107,7 @@ def get_missing_dependencies(framework: str) -> List[str]:
     """
     dependencies_map = {
         'django': ['django'],
-        'fastapi': ['fastapi', 'sqlalchemy', 'httpx', 'pydantic'],
+        'fastapi': ['fastapi', 'sqlalchemy', 'pydantic'],
         'flask': ['flask', 'flask_sqlalchemy']
     }
     

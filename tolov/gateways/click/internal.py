@@ -66,31 +66,18 @@ class ClickGatewayInternal:
 
         return payment_url
 
-    @handle_exceptions
-    def check_payment(self, transaction_id: str) -> Dict[str, Any]:
-        """Check payment status using Click merchant API."""
+    @staticmethod
+    def parse_transaction_id(transaction_id):
         parts = transaction_id.split('_')
         if len(parts) < 3 or parts[0] != 'click':
             raise ValueError(f"Invalid transaction ID format: {transaction_id}")
+        return parts[1]
 
-        account_id = parts[1]
-
-        # Check payment status using merchant API
-        payment_data = self.merchant_api.check_payment(account_id)
-
-        # Extract payment status
+    @staticmethod
+    def process_check_response(payment_data, transaction_id):
         status = payment_data.get('status')
-
-        # Map Click status to our status
-        status_mapping = {
-            'success': 'paid',
-            'processing': 'waiting',
-            'failed': 'failed',
-            'cancelled': 'cancelled'
-        }
-
+        status_mapping = {'success': 'paid', 'processing': 'waiting', 'failed': 'failed', 'cancelled': 'cancelled'}
         mapped_status = status_mapping.get(status, 'unknown')
-
         return {
             'transaction_id': transaction_id,
             'status': mapped_status,
@@ -100,6 +87,22 @@ class ClickGatewayInternal:
             'raw_response': payment_data
         }
 
+    @staticmethod
+    def process_cancel_response(cancel_data, transaction_id):
+        return {
+            'transaction_id': transaction_id,
+            'status': 'cancelled',
+            'cancelled_at': cancel_data.get('cancelled_at'),
+            'raw_response': cancel_data
+        }
+
+    @handle_exceptions
+    def check_payment(self, transaction_id: str) -> Dict[str, Any]:
+        """Check payment status using Click merchant API."""
+        account_id = self.parse_transaction_id(transaction_id)
+        payment_data = self.merchant_api.check_payment(account_id)
+        return self.process_check_response(payment_data, transaction_id)
+
     @handle_exceptions
     def cancel_payment(
         self,
@@ -107,22 +110,9 @@ class ClickGatewayInternal:
         reason: Optional[str] = None
     ) -> Dict[str, Any]:
         """Cancel payment using Click merchant API."""
-        # Extract account_id from transaction_id
-        parts = transaction_id.split('_')
-        if len(parts) < 3 or parts[0] != 'click':
-            raise ValueError(f"Invalid transaction ID format: {transaction_id}")
-
-        account_id = parts[1]
-
-        # Cancel payment using merchant API
+        account_id = self.parse_transaction_id(transaction_id)
         cancel_data = self.merchant_api.cancel_payment(account_id, reason)
-
-        return {
-            'transaction_id': transaction_id,
-            'status': 'cancelled',
-            'cancelled_at': cancel_data.get('cancelled_at'),
-            'raw_response': cancel_data
-        }
+        return self.process_cancel_response(cancel_data, transaction_id)
 
     @handle_exceptions
     def card_token_request(

@@ -102,6 +102,23 @@ class UzumGatewayInternal:
         """
         raise NotImplementedError("check_payment is not supported for Biller URL payments")
 
+    def _build_cancel_payment_request(self, id, amount, operation_id=None):
+        """Build ``(payload, headers)`` for cancel/refund."""
+        if not self.http_client:
+            raise ValueError("terminal_id and api_key are required for refund API")
+
+        headers = {}
+        if operation_id:
+            headers["X-Operation-Id"] = operation_id
+        else:
+            headers["X-Operation-Id"] = str(uuid.uuid4())
+
+        payload = {
+            "orderId": str(id),
+            "amount": int(amount)
+        }
+        return payload, headers
+
     def cancel_payment(
         self,
         id: str,
@@ -115,22 +132,9 @@ class UzumGatewayInternal:
             id: The order ID or Invoice ID to refund
             amount: Amount to refund in tiyin
             operation_id: Optional unique operation ID (X-Operation-Id header)
-        
+
         Returns:
             Dict containing refund response
         """
-        if not self.http_client:
-            raise ValueError("terminal_id and api_key are required for refund API")
-
-        headers = {}
-        if operation_id:
-            headers["X-Operation-Id"] = operation_id
-        else:
-            headers["X-Operation-Id"] = str(uuid.uuid4())
-        
-        payload = {
-            "orderId": str(id),
-            "amount": int(amount)
-        }
-        response = self.http_client.post(UzumEndpoints.REFUND, json_data=payload, headers=headers)
-        return response
+        payload, headers = self._build_cancel_payment_request(id, amount, operation_id)
+        return self.http_client.post(UzumEndpoints.REFUND, json_data=payload, headers=headers)

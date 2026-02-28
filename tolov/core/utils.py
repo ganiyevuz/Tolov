@@ -155,17 +155,34 @@ def handle_exceptions(func):
     """
     Decorator to handle exceptions and convert them to payment exceptions.
 
+    Automatically detects async functions and wraps them accordingly.
+
     Args:
         func: Function to decorate
 
     Returns:
         Decorated function
     """
+    import functools
+    import inspect
     from .exceptions import (
         InternalServiceError,
         exception_whitelist
     )
 
+    if inspect.iscoroutinefunction(func):
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            try:
+                return await func(*args, **kwargs)
+            except exception_whitelist as exc:
+                raise exc
+            except Exception as exc:
+                logger.exception(f"Unexpected error in {func.__name__}: {exc}")
+                raise InternalServiceError(str(exc))
+        return async_wrapper
+
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)

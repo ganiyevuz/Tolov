@@ -48,26 +48,22 @@ class PaymeGateway(BasePaymentGateway):
         self.payme_key = payme_key
         self.fallback_id = fallback_id
 
-        # Set the API URL based on the environment
         url = PaymeNetworks.TEST_NET if is_test_mode else PaymeNetworks.PROD_NET
+        self._setup_clients(url)
 
-        # Initialize HTTP client
+    def _setup_clients(self, url):
         self.http_client = HttpClient(base_url=url)
-
-        # Initialize components
-        self.cards = PaymeCards(http_client=self.http_client, payme_id=payme_id)
+        self.cards = PaymeCards(http_client=self.http_client, payme_id=self.payme_id)
         self.receipts = PaymeReceipts(
             http_client=self.http_client,
-            payme_id=payme_id,
-            payme_key=payme_key
+            payme_id=self.payme_id,
+            payme_key=self.payme_key,
         )
-
-        # Initialize internal implementation
         self._internal = PaymeGatewayInternal(
-            payme_id=payme_id,
-            payme_key=payme_key,
-            fallback_id=fallback_id,
-            is_test_mode=is_test_mode,
+            payme_id=self.payme_id,
+            payme_key=self.payme_key,
+            fallback_id=self.fallback_id,
+            is_test_mode=self.is_test_mode,
             http_client=self.http_client,
             cards=self.cards,
             receipts=self.receipts
@@ -105,34 +101,6 @@ class PaymeGateway(BasePaymentGateway):
         """
         return self._internal.generate_pay_link(id, amount, return_url, account_field_name)
 
-    async def generate_pay_link_async(
-        self,
-        id: Union[int, str],
-        amount: Union[int, float, str],
-        return_url: str,
-        account_field_name: str = "order_id"
-    ) -> str:
-        """
-        Async version of generate_pay_link.
-
-        Parameters
-        ----------
-        id : Union[int, str]
-            Unique identifier for the account/order.
-        amount : Union[int, float, str]
-            Payment amount in som.
-        return_url : str
-            URL to redirect after payment completion.
-        account_field_name : str, optional
-            Field name for account identifier (default: "order_id").
-
-        Returns
-        -------
-        str
-            Payme checkout URL with encoded parameters.
-        """
-        return self.generate_pay_link(id, amount, return_url, account_field_name)
-
     @handle_exceptions
     def create_payment(
         self,
@@ -154,28 +122,6 @@ class PaymeGateway(BasePaymentGateway):
             str: Payme payment URL
         """
         return self.generate_pay_link(id, amount, return_url, account_field_name)
-
-    @handle_exceptions
-    async def create_payment_async(
-        self,
-        id: Union[int, str],
-        amount: Union[int, float, str],
-        return_url: str = "",
-        account_field_name: str = "order_id"
-    ) -> str:
-        """
-        Async version of create_payment.
-
-        Args:
-            id: Account or order ID
-            amount: Payment amount in som
-            return_url: Return URL after payment (default: "")
-            account_field_name: Field name for account ID (default: "order_id")
-
-        Returns:
-            str: Payme payment URL
-        """
-        return await self.generate_pay_link_async(id, amount, return_url, account_field_name)
 
     def check_payment(self, transaction_id: str) -> Dict[str, Any]:
         """

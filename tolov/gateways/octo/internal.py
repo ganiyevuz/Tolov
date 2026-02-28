@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, Union, List
 
 from tolov.core.http import HttpClient
+from tolov.core.utils import handle_exceptions
 from tolov.gateways.octo.constants import (
     OctoEndpoints,
     OctoPaymentMethods,
@@ -38,8 +39,84 @@ class OctoGatewayInternal:
         self.http_client = http_client
 
     # ------------------------------------------------------------------
+    # payload builders
+    # ------------------------------------------------------------------
+    def _build_create_payment_request(
+        self,
+        shop_transaction_id: Union[int, str],
+        amount: Union[int, float],
+        return_url: str,
+        currency: str = "UZS",
+        description: str = "",
+        basket: Optional[List[Dict[str, Any]]] = None,
+        payment_methods: Optional[List[Dict[str, str]]] = None,
+        language: str = "uz",
+        ttl: int = 15,
+        user_data: Optional[Dict[str, str]] = None,
+        **kwargs,
+    ):
+        """Build ``(endpoint, payload)`` for ``prepare_payment``."""
+        init_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        payload: Dict[str, Any] = {
+            "octo_shop_id": self.octo_shop_id,
+            "octo_secret": self.octo_secret,
+            "shop_transaction_id": str(shop_transaction_id),
+            "auto_capture": True,
+            "init_time": init_time,
+            "test": self.is_test_mode,
+            "total_sum": float(amount),
+            "currency": currency,
+            "description": description,
+            "payment_methods": payment_methods or OctoPaymentMethods.ALL,
+            "return_url": return_url,
+            "language": language,
+            "ttl": ttl,
+        }
+
+        if self.notify_url:
+            payload["notify_url"] = self.notify_url
+
+        if user_data:
+            payload["user_data"] = user_data
+
+        if basket:
+            payload["basket"] = basket
+
+        # Allow callers to pass additional/override fields
+        payload.update(kwargs)
+
+        return OctoEndpoints.PREPARE_PAYMENT, payload
+
+    def _build_check_payment_request(self, shop_transaction_id: str):
+        """Build ``(endpoint, payload)`` for payment status check."""
+        payload = {
+            "octo_shop_id": self.octo_shop_id,
+            "octo_secret": self.octo_secret,
+            "shop_transaction_id": str(shop_transaction_id),
+        }
+        return OctoEndpoints.PREPARE_PAYMENT, payload
+
+    def _build_refund_request(
+        self,
+        octo_payment_uuid: str,
+        amount: Union[int, float],
+        shop_refund_id: Optional[str] = None,
+    ):
+        """Build ``(endpoint, payload)`` for ``refund``."""
+        payload = {
+            "octo_shop_id": self.octo_shop_id,
+            "octo_secret": self.octo_secret,
+            "octo_payment_UUID": octo_payment_uuid,
+            "shop_refund_id": shop_refund_id or str(uuid.uuid4()),
+            "amount": float(amount),
+        }
+        return OctoEndpoints.REFUND, payload
+
+    # ------------------------------------------------------------------
     # prepare_payment  (one-stage: auto_capture = True)
     # ------------------------------------------------------------------
+    @handle_exceptions
     def create_payment(
         self,
         shop_transaction_id: Union[int, str],
@@ -73,38 +150,15 @@ class OctoGatewayInternal:
         Returns:
             Dict with ``octo_pay_url``, ``octo_payment_UUID``, ``status``, etc.
         """
-        init_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        payload: Dict[str, Any] = {
-            "octo_shop_id": self.octo_shop_id,
-            "octo_secret": self.octo_secret,
-            "shop_transaction_id": str(shop_transaction_id),
-            "auto_capture": True,
-            "init_time": init_time,
-            "test": self.is_test_mode,
-            "total_sum": float(amount),
-            "currency": currency,
-            "description": description,
-            "payment_methods": payment_methods or OctoPaymentMethods.ALL,
-            "return_url": return_url,
-            "language": language,
-            "ttl": ttl,
-        }
-
-        if self.notify_url:
-            payload["notify_url"] = self.notify_url
-
-        if user_data:
-            payload["user_data"] = user_data
-
-        if basket:
-            payload["basket"] = basket
-
-        # Allow callers to pass additional/override fields
-        payload.update(kwargs)
+        endpoint, payload = self._build_create_payment_request(
+            shop_transaction_id, amount, return_url,
+            currency=currency, description=description, basket=basket,
+            payment_methods=payment_methods, language=language, ttl=ttl,
+            user_data=user_data, **kwargs,
+        )
 
         response = self.http_client.post(
-            endpoint=OctoEndpoints.PREPARE_PAYMENT,
+            endpoint=endpoint,
             json_data=payload,
         )
 
@@ -118,6 +172,7 @@ class OctoGatewayInternal:
     # ------------------------------------------------------------------
     # check_payment  (status inquiry via prepare_payment with 3 params)
     # ------------------------------------------------------------------
+    @handle_exceptions
     def check_payment(self, shop_transaction_id: str) -> Dict[str, Any]:
         """
         Check payment status by calling ``prepare_payment`` with
@@ -126,14 +181,10 @@ class OctoGatewayInternal:
         Returns:
             Dict with ``status``, ``octo_payment_UUID``, etc.
         """
-        payload = {
-            "octo_shop_id": self.octo_shop_id,
-            "octo_secret": self.octo_secret,
-            "shop_transaction_id": str(shop_transaction_id),
-        }
+        endpoint, payload = self._build_check_payment_request(shop_transaction_id)
 
         response = self.http_client.post(
-            endpoint=OctoEndpoints.PREPARE_PAYMENT,
+            endpoint=endpoint,
             json_data=payload,
         )
 
@@ -147,6 +198,7 @@ class OctoGatewayInternal:
     # ------------------------------------------------------------------
     # refund
     # ------------------------------------------------------------------
+    @handle_exceptions
     def refund(
         self,
         octo_payment_uuid: str,
@@ -164,16 +216,12 @@ class OctoGatewayInternal:
         Returns:
             Dict with refund status and details.
         """
-        payload = {
-            "octo_shop_id": self.octo_shop_id,
-            "octo_secret": self.octo_secret,
-            "octo_payment_UUID": octo_payment_uuid,
-            "shop_refund_id": shop_refund_id or str(uuid.uuid4()),
-            "amount": float(amount),
-        }
+        endpoint, payload = self._build_refund_request(
+            octo_payment_uuid, amount, shop_refund_id,
+        )
 
         response = self.http_client.post(
-            endpoint=OctoEndpoints.REFUND,
+            endpoint=endpoint,
             json_data=payload,
         )
 

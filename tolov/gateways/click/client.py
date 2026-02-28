@@ -47,28 +47,23 @@ class ClickGateway(BasePaymentGateway):
         self.merchant_id = merchant_id
         self.merchant_user_id = merchant_user_id
         self.secret_key = secret_key
-
-        # Set the API URL based on the environment
         url = ClickNetworks.TEST_NET if is_test_mode else ClickNetworks.PROD_NET
+        self._setup_clients(url)
 
-        # Initialize HTTP client
+    def _setup_clients(self, url):
         self.http_client = HttpClient(base_url=url)
-
-        # Initialize merchant API
         self.merchant_api = ClickMerchantApi(
             http_client=self.http_client,
-            service_id=service_id,
-            merchant_user_id=merchant_user_id,
-            secret_key=secret_key
+            service_id=self.service_id,
+            merchant_user_id=self.merchant_user_id,
+            secret_key=self.secret_key
         )
-
-        # Initialize internal implementation
         self._internal = ClickGatewayInternal(
-            service_id=service_id,
-            merchant_id=merchant_id,
-            merchant_user_id=merchant_user_id,
-            secret_key=secret_key,
-            is_test_mode=is_test_mode,
+            service_id=self.service_id,
+            merchant_id=self.merchant_id,
+            merchant_user_id=self.merchant_user_id,
+            secret_key=self.secret_key,
+            is_test_mode=self.is_test_mode,
             http_client=self.http_client,
             merchant_api=self.merchant_api
         )

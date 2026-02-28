@@ -59,16 +59,10 @@ class PaymeGatewayInternal:
         base_url = "https://test.paycom.uz" if self.is_test_mode else "https://checkout.paycom.uz"
         return f"{base_url}/{encoded_params}"
 
-    @handle_exceptions
-    def check_payment(self, transaction_id: str) -> Dict[str, Any]:
-        """Check payment status using Payme receipts."""
-        receipt_data = self.receipts.check(receipt_id=transaction_id)
-
-        # Extract receipt status
+    @staticmethod
+    def process_check_response(receipt_data, transaction_id):
         receipt = receipt_data.get('receipt', {})
         status = receipt.get('state')
-
-        # Map Payme status to our status
         status_mapping = {
             0: 'created',
             1: 'waiting',
@@ -76,18 +70,33 @@ class PaymeGatewayInternal:
             3: 'cancelled',
             4: 'refunded'
         }
-
         mapped_status = status_mapping.get(status, 'unknown')
-
         return {
             'transaction_id': transaction_id,
             'status': mapped_status,
-            'amount': receipt.get('amount') / 100,  # Convert from tiyin to som
+            'amount': receipt.get('amount') / 100,
             'paid_at': receipt.get('pay_time'),
             'created_at': receipt.get('create_time'),
             'cancelled_at': receipt.get('cancel_time'),
             'raw_response': receipt_data
         }
+
+    @staticmethod
+    def process_cancel_response(receipt_data, transaction_id):
+        receipt = receipt_data.get('receipt', {})
+        status = receipt.get('state')
+        return {
+            'transaction_id': transaction_id,
+            'status': 'cancelled' if status == 3 else 'unknown',
+            'cancelled_at': receipt.get('cancel_time'),
+            'raw_response': receipt_data
+        }
+
+    @handle_exceptions
+    def check_payment(self, transaction_id: str) -> Dict[str, Any]:
+        """Check payment status using Payme receipts."""
+        receipt_data = self.receipts.check(receipt_id=transaction_id)
+        return self.process_check_response(receipt_data, transaction_id)
 
     @handle_exceptions
     def cancel_payment(
@@ -100,14 +109,4 @@ class PaymeGatewayInternal:
             receipt_id=transaction_id,
             reason=reason or "Cancelled by merchant"
         )
-
-        # Extract receipt status
-        receipt = receipt_data.get('receipt', {})
-        status = receipt.get('state')
-
-        return {
-            'transaction_id': transaction_id,
-            'status': 'cancelled' if status == 3 else 'unknown',
-            'cancelled_at': receipt.get('cancel_time'),
-            'raw_response': receipt_data
-        }
+        return self.process_cancel_response(receipt_data, transaction_id)

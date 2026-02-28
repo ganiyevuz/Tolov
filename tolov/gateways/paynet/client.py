@@ -65,28 +65,6 @@ class PaynetGateway(BasePaymentGateway):
         """
         return self._internal.generate_pay_link(id, amount)
 
-    async def generate_pay_link_async(
-        self,
-        id: Union[int, str],
-        amount: Optional[Union[int, float, str]] = None
-    ) -> str:
-        """
-        Async version of generate_pay_link.
-
-        Parameters
-        ----------
-        id : Union[int, str]
-            Unique identifier for the account/payment.
-        amount : Optional[Union[int, float, str]]
-            Payment amount in tiyin (optional).
-
-        Returns
-        -------
-        str
-            Paynet payment URL.
-        """
-        return self.generate_pay_link(id, amount)
-
     @handle_exceptions
     def create_payment(
         self,
@@ -106,26 +84,6 @@ class PaynetGateway(BasePaymentGateway):
             str: Paynet payment URL
         """
         return self.generate_pay_link(id, amount)
-
-    @handle_exceptions
-    async def create_payment_async(
-        self,
-        id: Union[int, str],
-        amount: Optional[Union[int, float, str]] = None,
-        **kwargs
-    ) -> str:
-        """
-        Async version of create_payment.
-
-        Args:
-            id: Account or payment ID
-            amount: Payment amount in tiyin (optional)
-            **kwargs: Additional parameters (ignored)
-
-        Returns:
-            str: Paynet payment URL
-        """
-        return await self.generate_pay_link_async(id, amount)
 
     def check_payment(self, transaction_id: str) -> Dict[str, Any]:
         """

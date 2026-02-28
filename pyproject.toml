@@ -1,7 +1,7 @@
 [project]
 name = "tolov"
 version = "1.0.0"
-description = "Unified payment library for Uzbekistan payment systems (Payme, Click, Uzum, Paynet, Octo)"
+description = "Accept payments from every major provider in Uzbekistan with a single, beautiful API. Payme, Click, Uzum, Paynet, Octo — sync & async."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Office/Business :: Financial",
 ]
 dependencies = [
-    "requests>=2,<3",
+    "httpx>=0.23",
     "loguru>=0.7",
 ]
 
@@ -39,7 +39,6 @@ fastapi = [
     "fastapi>=0.68",
     "sqlalchemy>=1.4",
     "pydantic>=1.8",
-    "httpx>=0.23",
     "python-multipart>=0.0.5",
 ]
 flask = [

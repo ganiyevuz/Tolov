@@ -62,16 +62,16 @@ class OctoGateway(BasePaymentGateway):
 
         # Octo uses the same URL; test mode is a request param
         url = OctoNetworks.TEST_NET if is_test_mode else OctoNetworks.PROD_NET
+        self._setup_clients(url)
 
-        # Initialize HTTP client
+    def _setup_clients(self, url: str):
+        """Initialize HTTP client and internal implementation."""
         self.http_client = HttpClient(base_url=url)
-
-        # Initialize internal implementation
         self._internal = OctoGatewayInternal(
-            octo_shop_id=octo_shop_id,
-            octo_secret=octo_secret,
-            notify_url=notify_url,
-            is_test_mode=is_test_mode,
+            octo_shop_id=self.octo_shop_id,
+            octo_secret=self.octo_secret,
+            notify_url=self.notify_url,
+            is_test_mode=self.is_test_mode,
             http_client=self.http_client,
         )
 

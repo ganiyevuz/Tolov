@@ -74,16 +74,6 @@ class UzumGateway(BasePaymentGateway):
         """
         return self._internal.create_payment(id, amount, return_url, **kwargs)
 
-    async def create_payment_async(
-        self,
-        id: Union[int, str],
-        amount: Union[int, float, str],
-        return_url: str,
-        **kwargs
-    ) -> str:
-        """Async version of create_payment."""
-        return self.create_payment(id, amount, return_url, **kwargs)
-
     def check_payment(self, id: str) -> Dict[str, Any]:
         """
         Check payment status by order ID.

@@ -46,6 +46,26 @@ class PaymeCards:
         }
         return headers
 
+    def _build_create_request(self, card_number, expire_date, save, **kwargs):
+        phone = kwargs.get('phone')
+        language = kwargs.get('language', 'uz')
+        data = {
+            "jsonrpc": "2.0",
+            "method": PaymeEndpoints.CARDS_CREATE,
+            "params": {
+                "card": {
+                    "number": card_number,
+                    "expire": expire_date
+                },
+                "save": save
+            },
+            "id": 1
+        }
+        if phone:
+            data["params"]["phone"] = phone
+        headers = self._get_auth_headers(language)
+        return data, headers
+
     @handle_exceptions
     def create(
         self,
@@ -68,39 +88,22 @@ class PaymeCards:
         Returns:
             Dict containing card creation response
         """
-        # Extract additional parameters
-        phone = kwargs.get('phone')
-        language = kwargs.get('language', 'uz')
+        data, headers = self._build_create_request(card_number, expire_date, save, **kwargs)
+        return self.http_client.post(endpoint="", json_data=data, headers=headers)
 
-        # Prepare request data
+    def _build_verify_request(self, token, code, **kwargs):
+        language = kwargs.get('language', 'uz')
         data = {
             "jsonrpc": "2.0",
-            "method": PaymeEndpoints.CARDS_CREATE,
+            "method": PaymeEndpoints.CARDS_VERIFY,
             "params": {
-                "card": {
-                    "number": card_number,
-                    "expire": expire_date
-                },
-                "save": save
+                "token": token,
+                "code": code
             },
             "id": 1
         }
-
-        # Add optional parameters
-        if phone:
-            data["params"]["phone"] = phone
-
-        # Get authentication headers
         headers = self._get_auth_headers(language)
-
-        # Make request
-        response = self.http_client.post(
-            endpoint="",
-            json_data=data,
-            headers=headers
-        )
-
-        return response
+        return data, headers
 
     @handle_exceptions
     def verify(
@@ -121,31 +124,20 @@ class PaymeCards:
         Returns:
             Dict containing card verification response
         """
-        # Extract additional parameters
-        language = kwargs.get('language', 'uz')
+        data, headers = self._build_verify_request(token, code, **kwargs)
+        return self.http_client.post(endpoint="", json_data=data, headers=headers)
 
-        # Prepare request data
+    def _build_check_request(self, token):
         data = {
             "jsonrpc": "2.0",
-            "method": PaymeEndpoints.CARDS_VERIFY,
+            "method": PaymeEndpoints.CARDS_CHECK,
             "params": {
-                "token": token,
-                "code": code
+                "token": token
             },
             "id": 1
         }
-
-        # Get authentication headers
-        headers = self._get_auth_headers(language)
-
-        # Make request
-        response = self.http_client.post(
-            endpoint="",
-            json_data=data,
-            headers=headers
-        )
-
-        return response
+        headers = self._get_auth_headers()
+        return data, headers
 
     @handle_exceptions
     def check(self, token: str) -> Dict[str, Any]:
@@ -158,27 +150,20 @@ class PaymeCards:
         Returns:
             Dict containing card check response
         """
-        # Prepare request data
+        data, headers = self._build_check_request(token)
+        return self.http_client.post(endpoint="", json_data=data, headers=headers)
+
+    def _build_remove_request(self, token):
         data = {
             "jsonrpc": "2.0",
-            "method": PaymeEndpoints.CARDS_CHECK,
+            "method": PaymeEndpoints.CARDS_REMOVE,
             "params": {
                 "token": token
             },
             "id": 1
         }
-
-        # Get authentication headers
         headers = self._get_auth_headers()
-
-        # Make request
-        response = self.http_client.post(
-            endpoint="",
-            json_data=data,
-            headers=headers
-        )
-
-        return response
+        return data, headers
 
     @handle_exceptions
     def remove(self, token: str) -> Dict[str, Any]:
@@ -191,27 +176,21 @@ class PaymeCards:
         Returns:
             Dict containing card removal response
         """
-        # Prepare request data
+        data, headers = self._build_remove_request(token)
+        return self.http_client.post(endpoint="", json_data=data, headers=headers)
+
+    def _build_get_verify_code_request(self, token, **kwargs):
+        language = kwargs.get('language', 'uz')
         data = {
             "jsonrpc": "2.0",
-            "method": PaymeEndpoints.CARDS_REMOVE,
+            "method": PaymeEndpoints.CARDS_GET_VERIFY_CODE,
             "params": {
                 "token": token
             },
             "id": 1
         }
-
-        # Get authentication headers
-        headers = self._get_auth_headers()
-
-        # Make request
-        response = self.http_client.post(
-            endpoint="",
-            json_data=data,
-            headers=headers
-        )
-
-        return response
+        headers = self._get_auth_headers(language)
+        return data, headers
 
     @handle_exceptions
     def get_verify_code(
@@ -230,27 +209,5 @@ class PaymeCards:
         Returns:
             Dict containing verification code response
         """
-        # Extract additional parameters
-        language = kwargs.get('language', 'uz')
-
-        # Prepare request data
-        data = {
-            "jsonrpc": "2.0",
-            "method": PaymeEndpoints.CARDS_GET_VERIFY_CODE,
-            "params": {
-                "token": token
-            },
-            "id": 1
-        }
-
-        # Get authentication headers
-        headers = self._get_auth_headers(language)
-
-        # Make request
-        response = self.http_client.post(
-            endpoint="",
-            json_data=data,
-            headers=headers
-        )
-
-        return response
+        data, headers = self._build_get_verify_code_request(token, **kwargs)
+        return self.http_client.post(endpoint="", json_data=data, headers=headers)
