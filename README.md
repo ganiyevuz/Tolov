@@ -6,10 +6,10 @@
 <strong>Unified payment SDK for Uzbekistan</strong></h3>
 
 <p align="center">
-  <a href="https://badge.fury.io/py/tolov"><img src="https://badge.fury.io/py/tolov.svg" alt="PyPI version"></a>
+  <a href="https://badge.fury.io/py/tolov"><img src="https://badge.fury.io/py/tolov@2x.png?icon=si%3Apython" alt="PyPI version" height="18"></a>
   <a href="https://pypi.org/project/tolov/"><img src="https://img.shields.io/pypi/pyversions/tolov.svg" alt="Python"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
-  <a href="https://pypi.org/project/tolov/"><img src="https://img.shields.io/pypi/dm/tolov.svg?color=blue" alt="Downloads"></a>
+  <a href="https://pypi.org/project/tolov"><img src="https://img.shields.io/pypi/dm/tolov.svg?color=blue" alt="Downloads"></a>
 </p>
 
 <p align="center">
