@@ -1,4 +1,4 @@
-<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><clipPath id="r_trastpay"><rect width="240" height="240" rx="64.8" ry="64.8"/></clipPath></defs><g clip-path="url(#r_trastpay)">
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><clipPath id="r_trastpay"><rect x="0" y="0" width="240" height="240" rx="64.8" ry="64.8"/></clipPath></defs><g clip-path="url(#r_trastpay)">
 <g clip-path="url(#clip0_219_29)">
 <path d="M240 0C240 88.4337 239.487 156.733 240 240H1.7484e-05C0.512901 156.733 1.7484e-05 88.4337 0 0H240Z" fill="#F4F4F7"/>
 <rect x="31" y="31" width="178" height="178" fill="url(#pattern0_219_29)"/>

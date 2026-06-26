@@ -1,4 +1,4 @@
-<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="r_uzum"><rect width="56" height="56" rx="15.12" ry="15.12"/></clipPath></defs><g clip-path="url(#r_uzum)">
+<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="r_uzum"><rect x="0" y="0" width="56" height="56" rx="15.12" ry="15.12"/></clipPath></defs><g clip-path="url(#r_uzum)">
 <rect width="56" height="56" fill="#7000FF"/>
 <g clip-path="url(#clip0_5556_21063)">
 <path d="M29.8579 10.0184C29.1756 9.95536 28.4741 9.93018 27.763 9.93018C27.0616 9.93018 26.3601 9.95852 25.6778 10.0184V19.6029H29.8547V10.0184H29.8579ZM39.5158 15.6059C38.0427 15.1303 36.4835 14.7335 34.8542 14.4468V22.4943C34.8542 28.2898 32.3608 31.3324 27.763 31.3324C23.1844 31.3324 20.6814 28.2866 20.6814 22.4943V14.4468C19.052 14.7335 17.4962 15.1303 16.0199 15.6059V22.5416C16.0199 28.9102 21.2808 34.1104 27.763 34.1104C34.2516 34.1104 39.5126 28.9102 39.5126 22.5416V15.6059H39.5158Z" fill="white"/>
