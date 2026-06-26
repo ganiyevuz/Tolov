@@ -2,6 +2,7 @@
 HTTP client for making requests to payment gateways.
 """
 import json
+from urllib.parse import urlsplit
 from loguru import logger
 from typing import Dict, Any, Optional, Union, List
 
@@ -12,6 +13,17 @@ from tolov.core.exceptions import (
     TimeoutError as PaymentTimeoutError,
     InternalServiceError,
 )
+
+
+def _safe_target(url: Any) -> str:
+    """Return ``scheme://host`` for a URL, dropping the path/query.
+
+    Payment request paths can carry secrets (e.g. a card token in
+    ``/payment/card/{token}``), so only the host is safe to log or embed in
+    error messages.
+    """
+    parts = urlsplit(str(url))
+    return f"{parts.scheme}://{parts.netloc}" if parts.netloc else "(unknown host)"
 
 
 def _handle_response(response: httpx.Response) -> Dict[str, Any]:
@@ -34,14 +46,16 @@ def _handle_response(response: httpx.Response) -> Dict[str, Any]:
         response.raise_for_status()
         return response.json()
     except json.JSONDecodeError:
-        logger.error(f"Failed to decode JSON response: {response.text}")
+        logger.error("Failed to decode JSON response (HTTP {})", response.status_code)
         raise InternalServiceError("Failed to decode JSON response")
-    except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP error: {e}, Response: {response.text}")
+    except httpx.HTTPStatusError:
+        logger.error(
+            "HTTP error {} from {}", response.status_code, _safe_target(response.url)
+        )
         try:
             error_data = response.json()
         except json.JSONDecodeError:
-            error_data = {"raw_response": response.text}
+            error_data = {"raw_response": response.text[:500]}
 
         raise ExternalServiceError(
             message=f"HTTP error: {response.status_code}", data=error_data
@@ -113,14 +127,17 @@ class HttpClient:
             )
             return _handle_response(response)
         except httpx.TimeoutException:
-            logger.error(f"Request timed out: {method} {url}")
-            raise PaymentTimeoutError(f"Request timed out: {method} {url}")
-        except httpx.ConnectError as e:
-            logger.error(f"Connection error: {e}")
-            raise ExternalServiceError(f"Connection error: {str(e)}")
-        except httpx.HTTPError as e:
-            logger.error(f"Request error: {e}")
-            raise ExternalServiceError(f"Request error: {str(e)}")
+            target = _safe_target(url)
+            logger.error("Request timed out: {} {}", method, target)
+            raise PaymentTimeoutError(f"Request timed out: {method} {target}")
+        except httpx.ConnectError as exc:
+            target = _safe_target(url)
+            logger.error("Connection error to {}: {}", target, exc)
+            raise ExternalServiceError(f"Connection error to {target}")
+        except httpx.HTTPError as exc:
+            target = _safe_target(url)
+            logger.error("Request error to {} ({})", target, type(exc).__name__)
+            raise ExternalServiceError(f"Request error to {target}")
 
     def get(
         self,
@@ -256,14 +273,17 @@ class AsyncHttpClient:
             )
             return _handle_response(response)
         except httpx.TimeoutException:
-            logger.error(f"Request timed out: {method} {url}")
-            raise PaymentTimeoutError(f"Request timed out: {method} {url}")
-        except httpx.ConnectError as e:
-            logger.error(f"Connection error: {e}")
-            raise ExternalServiceError(f"Connection error: {str(e)}")
-        except httpx.HTTPError as e:
-            logger.error(f"Request error: {e}")
-            raise ExternalServiceError(f"Request error: {str(e)}")
+            target = _safe_target(url)
+            logger.error("Request timed out: {} {}", method, target)
+            raise PaymentTimeoutError(f"Request timed out: {method} {target}")
+        except httpx.ConnectError as exc:
+            target = _safe_target(url)
+            logger.error("Connection error to {}: {}", target, exc)
+            raise ExternalServiceError(f"Connection error to {target}")
+        except httpx.HTTPError as exc:
+            target = _safe_target(url)
+            logger.error("Request error to {} ({})", target, type(exc).__name__)
+            raise ExternalServiceError(f"Request error to {target}")
 
     async def get(
         self,
