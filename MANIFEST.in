@@ -1,6 +1,7 @@
 # Include documentation and license
 include README.md
 include CHANGELOG.md
+include llms.txt
 include LICENSE.txt
 
 # Include all Python files

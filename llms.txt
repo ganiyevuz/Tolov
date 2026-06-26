@@ -1,0 +1,72 @@
+# Tolov
+
+> Unified payment SDK for Uzbekistan: one consistent Python API for **Payme, Click, Uzum, Paynet, Octo, and Multicard** — sync & async — with drop-in Django and FastAPI webhook handlers.
+
+Tolov is a Python library published on PyPI as `tolov` (requires Python >= 3.9).
+Install with `pip install tolov`; add the optional extras `tolov[django]` or
+`tolov[fastapi]` to use the framework webhook handlers. Only Django and FastAPI
+integrations exist (there is no Flask integration despite older references).
+
+Amounts: the unified `create_payment(amount=...)` takes **som** for Payme,
+Click, Uzum, Octo, and Multicard (converted to tiyin internally). Paynet and
+Multicard's lower-level namespaced methods take **tiyin** directly. Pass
+`is_test_mode=True` to hit a provider's sandbox.
+
+## Core API
+
+Every gateway implements the same three methods:
+
+```python
+create_payment(id, amount, ...) -> str    # a checkout/payment URL
+check_payment(transaction_id)   -> dict   # status + details
+cancel_payment(transaction_id)  -> dict   # cancellation / refund
+```
+
+Sync and async share the same class names; HTTP-calling methods become `async`:
+
+```python
+from tolov import PaymeGateway, ClickGateway, UzumGateway, OctoGateway, MulticardGateway      # sync
+from tolov.aio import PaymeGateway, ClickGateway, UzumGateway, OctoGateway, MulticardGateway  # async (await HTTP calls)
+```
+
+Gateway constructors (required parameters):
+
+- `PaymeGateway(payme_id, payme_key)`
+- `ClickGateway(service_id, merchant_id, merchant_user_id, secret_key)`
+- `UzumGateway(service_id)`
+- `PaynetGateway(merchant_id)`  (import: `from tolov.gateways.paynet.client import PaynetGateway`)
+- `OctoGateway(octo_shop_id, octo_secret, notify_url)`
+- `MulticardGateway(application_id, secret, store_id)`
+- `create_gateway("payme"|"click"|"uzum"|"paynet"|"multicard", **kwargs)` factory in `tolov.factory`
+
+## Multicard (aggregator)
+
+Multicard is an aggregator — one `MulticardGateway` integration accepts 18+
+payment methods (cards, wallets, banks) on a single checkout. It uses token
+auth (the SDK fetches/caches/refreshes the JWT) and exposes namespaced
+sub-clients: `mc.invoices`, `mc.payments` (token & app pay, OTP confirm, full +
+partial refunds, fiscal), `mc.cards` (form binding, tokens, PINFL check),
+`mc.holds`, `mc.payouts`, `mc.reports`.
+
+## Webhooks
+
+- Django: subclass `Base<Provider>WebhookView` from `tolov.integrations.django.views`; configure providers in a single `settings.TOLOV` dict; the shared `PaymentTransaction` model stores results.
+- FastAPI: `<Provider>WebhookHandler` from `tolov.integrations.fastapi` with a SQLAlchemy session.
+
+## Documentation
+
+- [README](https://raw.githubusercontent.com/ganiyevuz/Tolov/master/README.md): full usage, per-provider examples, and Django/FastAPI integration guides
+- [CHANGELOG](https://raw.githubusercontent.com/ganiyevuz/Tolov/master/CHANGELOG.md): release notes (current: 2.1.0)
+- [PyPI project](https://pypi.org/project/tolov/)
+
+## Source
+
+- [Gateways (one package per provider)](https://github.com/ganiyevuz/Tolov/tree/master/tolov/gateways)
+- [Async variants](https://github.com/ganiyevuz/Tolov/tree/master/tolov/aio)
+- [Django & FastAPI integrations](https://github.com/ganiyevuz/Tolov/tree/master/tolov/integrations)
+- [Core (base gateway, http client, exceptions)](https://github.com/ganiyevuz/Tolov/tree/master/tolov/core)
+
+## Optional
+
+- [Tests (mocked + live Multicard sandbox)](https://github.com/ganiyevuz/Tolov/tree/master/tests)
+- [Multicard provider API docs](https://docs.multicard.uz/)
