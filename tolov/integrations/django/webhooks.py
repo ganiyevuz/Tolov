@@ -12,6 +12,7 @@ from .internal_webhooks import (
     UzumWebhook as UzumWebhookInternal,
     PaynetWebhook as PaynetWebhookInternal,
     OctoWebhook as OctoWebhookInternal,
+    MulticardWebhook as MulticardWebhookInternal,
 )
 
 
@@ -358,6 +359,36 @@ class OctoWebhook(OctoWebhookInternal):
 
         Args:
             params: Callback data from Octo
+            transaction: PaymentTransaction object
+        """
+        pass
+
+
+class MulticardWebhook(MulticardWebhookInternal):
+    """
+    Base Multicard webhook handler for Django (success callback).
+
+    Override ``successfully_payment`` to update your order when Multicard
+    confirms a payment.
+
+    Example:
+    ```python
+    from tolov.integrations.django.webhooks import MulticardWebhook
+
+    class CustomMulticardWebhook(MulticardWebhook):
+        def successfully_payment(self, params, transaction):
+            order = Order.objects.get(id=transaction.account_id)
+            order.status = "paid"
+            order.save()
+    ```
+    """
+
+    def successfully_payment(self, params, transaction):
+        """
+        Called when a payment is successful.
+
+        Args:
+            params: Callback data from Multicard
             transaction: PaymentTransaction object
         """
         pass

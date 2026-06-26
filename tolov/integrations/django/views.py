@@ -12,6 +12,7 @@ from .webhooks import (
     UzumWebhook,
     PaynetWebhook,
     OctoWebhook,
+    MulticardWebhook,
 )
 
 
@@ -237,3 +238,31 @@ class BaseOctoWebhookView(OctoWebhook):
         Called when a payment is cancelled.
         """
         logger.info(f"Octo payment cancelled: {transaction.transaction_id}")
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class BaseMulticardWebhookView(MulticardWebhook):
+    """
+    Default Multicard webhook view (success callback).
+
+    Verifies the md5(store_id+invoice_id+amount+secret) signature, upserts the
+    PaymentTransaction, and marks it paid. Extend and override
+    ``successfully_payment`` to update your order.
+
+    Example:
+    ```python
+    from tolov.integrations.django.views import BaseMulticardWebhookView
+
+    class MulticardWebhookView(BaseMulticardWebhookView):
+        def successfully_payment(self, params, transaction):
+            order = Order.objects.get(id=transaction.account_id)
+            order.status = "paid"
+            order.save()
+    ```
+    """
+
+    def successfully_payment(self, params, transaction):
+        """
+        Called when a payment is successful.
+        """
+        logger.info(f"Multicard payment successful: {transaction.transaction_id}")

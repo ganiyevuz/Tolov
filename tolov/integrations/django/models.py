@@ -16,6 +16,7 @@ class PaymentTransaction(models.Model):
     UZUM = "uzum"
     PAYNET = "paynet"
     OCTO = "octo"
+    MULTICARD = "multicard"
 
     GATEWAY_CHOICES = [
         (PAYME, "Payme"),
@@ -23,6 +24,7 @@ class PaymentTransaction(models.Model):
         (UZUM, "Uzum"),
         (PAYNET, "Paynet"),
         (OCTO, "Octo"),
+        (MULTICARD, "Multicard"),
     ]
 
     # Transaction states
