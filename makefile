@@ -3,4 +3,4 @@ upload:
 
 
 obfuscate:
-	uv run pyarmor gen -O ./build/obf -r ./payme/__init__.py
+	uv run pyarmor gen -O ./build/obf -r ./tolov
