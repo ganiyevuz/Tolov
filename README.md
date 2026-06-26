@@ -24,26 +24,26 @@
 <div align="center">
 <table>
 <tr>
-<td align="center" width="80"><img src="assets/providers/payme.svg" width="46" height="46" alt="Payme"><br><sub>Payme</sub></td>
-<td align="center" width="80"><img src="assets/providers/click.svg" width="46" height="46" alt="Click"><br><sub>Click</sub></td>
-<td align="center" width="80"><img src="assets/providers/uzum.svg" width="46" height="46" alt="Uzum"><br><sub>Uzum</sub></td>
-<td align="center" width="80"><img src="assets/providers/alif.svg" width="46" height="46" alt="Alif"><br><sub>Alif</sub></td>
-<td align="center" width="80"><img src="assets/providers/apexbank.svg" width="46" height="46" alt="Apex"><br><sub>Apex</sub></td>
-<td align="center" width="80"><img src="assets/providers/davrbank.svg" width="46" height="46" alt="Davr"><br><sub>Davr</sub></td>
-<td align="center" width="80"><img src="assets/providers/asiaalliancebank.svg" width="46" height="46" alt="Alliance"><br><sub>Alliance</sub></td>
-<td align="center" width="80"><img src="assets/providers/rahmat.svg" width="46" height="46" alt="Rahmat"><br><sub>Rahmat</sub></td>
-<td align="center" width="80"><img src="assets/providers/asterium.svg" width="46" height="46" alt="Asterium"><br><sub>Asterium</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/payme.svg" width="46" height="46" alt="Payme"><br><sub>Payme</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/click.svg" width="46" height="46" alt="Click"><br><sub>Click</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/uzum.svg" width="46" height="46" alt="Uzum"><br><sub>Uzum</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/alif.svg" width="46" height="46" alt="Alif"><br><sub>Alif</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/apexbank.svg" width="46" height="46" alt="Apex"><br><sub>Apex</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/davrbank.svg" width="46" height="46" alt="Davr"><br><sub>Davr</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/asiaalliancebank.svg" width="46" height="46" alt="Alliance"><br><sub>Alliance</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/rahmat.svg" width="46" height="46" alt="Rahmat"><br><sub>Rahmat</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/asterium.svg" width="46" height="46" alt="Asterium"><br><sub>Asterium</sub></td>
 </tr>
 <tr>
-<td align="center" width="80"><img src="assets/providers/paynet.svg" width="46" height="46" alt="Paynet"><br><sub>Paynet</sub></td>
-<td align="center" width="80"><img src="assets/providers/anorbank.svg" width="46" height="46" alt="Anor"><br><sub>Anor</sub></td>
-<td align="center" width="80"><img src="assets/providers/xazna.svg" width="46" height="46" alt="Xazna"><br><sub>Xazna</sub></td>
-<td align="center" width="80"><img src="assets/providers/beepul.svg" width="46" height="46" alt="Beepul"><br><sub>Beepul</sub></td>
-<td align="center" width="80"><img src="assets/providers/oson.svg" width="46" height="46" alt="Oson"><br><sub>Oson</sub></td>
-<td align="center" width="80"><img src="assets/providers/trastpay.svg" width="46" height="46" alt="Trast"><br><sub>Trast</sub></td>
-<td align="center" width="80"><img src="assets/providers/ofb.svg" width="46" height="46" alt="OFB"><br><sub>OFB</sub></td>
-<td align="center" width="80"><img src="assets/providers/morpara.svg" width="46" height="46" alt="Morpara"><br><sub>Morpara</sub></td>
-<td align="center" width="80"><img src="assets/providers/sbp.svg" width="46" height="46" alt="SBP"><br><sub>&#1057;&#1041;&#1055;</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/paynet.svg" width="46" height="46" alt="Paynet"><br><sub>Paynet</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/anorbank.svg" width="46" height="46" alt="Anor"><br><sub>Anor</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/xazna.svg" width="46" height="46" alt="Xazna"><br><sub>Xazna</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/beepul.svg" width="46" height="46" alt="Beepul"><br><sub>Beepul</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/oson.svg" width="46" height="46" alt="Oson"><br><sub>Oson</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/trastpay.svg" width="46" height="46" alt="Trast"><br><sub>Trast</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/ofb.svg" width="46" height="46" alt="OFB"><br><sub>OFB</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/morpara.svg" width="46" height="46" alt="Morpara"><br><sub>Morpara</sub></td>
+<td align="center" width="80"><img src="https://raw.githubusercontent.com/ganiyevuz/Tolov/master/assets/providers/sbp.svg" width="46" height="46" alt="SBP"><br><sub>&#1057;&#1041;&#1055;</sub></td>
 </tr>
 </table>
 </div>
