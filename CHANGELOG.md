@@ -32,8 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test suite under `tests/`: `respx`-mocked unit tests covering every sub-client
   method (sync + async), the session lifecycle, and the webhooks, plus live
   Multicard sandbox integration tests (`pytest -m live`).
-- `CLAUDE.md` contributor/architecture guide, README Multicard sections, design
-  spec, and implementation plan.
+- `CLAUDE.md` contributor/architecture guide and README Multicard sections.
 
 ### Changed
 
