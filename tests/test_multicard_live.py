@@ -13,7 +13,11 @@ import pytest
 
 from conftest import APPLICATION_ID, BASE_DEV, SECRET, STORE_ID, TEST_CARD
 from tolov import MulticardGateway
-from tolov.core.exceptions import PaymentException, TransactionNotFound
+from tolov.core.exceptions import (
+    ExternalServiceError,
+    PaymentException,
+    TransactionNotFound,
+)
 
 pytestmark = pytest.mark.live
 
@@ -115,14 +119,14 @@ def _bearer():
     return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def card_token(live):
-    """Mint an active card token for the public test card.
+    """Mint an active card token for the public test card (once per session).
 
     Uses the sandbox PCI add-card flow (POST /payment/card + OTP confirm)
     directly — those endpoints are intentionally NOT in the SDK, this is a
     test-only helper to obtain a token so the token-based flows can be
-    exercised end to end.
+    exercised end to end. Session-scoped to avoid the card's SMS rate limit.
     """
     headers = _bearer()
     created = httpx.post(
@@ -135,6 +139,8 @@ def card_token(live):
         headers=headers,
         timeout=30,
     ).json()
+    if not created.get("success"):
+        pytest.skip(f"could not mint test card token: {created.get('error')}")
     token = created["data"]["card_token"]
     httpx.put(
         f"{BASE_DEV}/payment/card/{token}",
@@ -157,28 +163,42 @@ def _confirm(mc, payment):
     return mc.payments.confirm(uuid_)
 
 
+def _guard(fn):
+    """Run fn; skip the test if the sandbox throttles SMS for the test card."""
+    try:
+        return fn()
+    except ExternalServiceError as exc:
+        if exc.code == "ERROR_SMS_TO_MANY":
+            pytest.skip("sandbox SMS rate limit reached for the test card")
+        raise
+
+
+def _pay(mc, card_token, amount):
+    """Create + confirm a token payment, returning (payment, confirmed)."""
+    pay = _guard(
+        lambda: mc.payments.create_by_token(
+            card_token=card_token, amount=amount, invoice_id=_uid()
+        )
+    )
+    return pay, _confirm(mc, pay)
+
+
 def test_card_info_by_token(card_token):
     assert _gw().cards.info_by_token(card_token)["status"] == "active"
 
 
 def test_token_payment_confirm_then_refund(card_token):
     mc = _gw()
-    pay = mc.payments.create_by_token(
-        card_token=card_token, amount=150000, invoice_id=_uid()
-    )
-    u = pay["uuid"]
-    assert _confirm(mc, pay)["status"] == "success"
-    assert mc.payments.info(u)["status"] == "success"
-    assert mc.payments.refund(u)["status"] == "revert"
+    pay, confirmed = _pay(mc, card_token, 150000)
+    assert confirmed["status"] == "success"
+    assert mc.payments.info(pay["uuid"])["status"] == "success"
+    assert mc.payments.refund(pay["uuid"])["status"] == "revert"
 
 
 def test_token_payment_partial_refund(card_token):
     mc = _gw()
-    pay = mc.payments.create_by_token(
-        card_token=card_token, amount=200000, invoice_id=_uid()
-    )
-    u = pay["uuid"]
-    assert _confirm(mc, pay)["status"] == "success"
+    pay, confirmed = _pay(mc, card_token, 200000)
+    assert confirmed["status"] == "success"
     ofd = [
         {
             "qty": 1,
@@ -190,17 +210,19 @@ def test_token_payment_partial_refund(card_token):
         }
     ]
     try:
-        res = mc.payments.partial_refund(u, refund_amount=50000, ofd=ofd)
+        res = mc.payments.partial_refund(pay["uuid"], refund_amount=50000, ofd=ofd)
         assert "status" in res
     except PaymentException:
         # partial refund requires terminal configuration; fall back to full
-        assert mc.payments.refund(u)["status"] == "revert"
+        assert mc.payments.refund(pay["uuid"])["status"] == "revert"
 
 
 def test_hold_confirm_then_debit(card_token):
     mc = _gw()
-    hold = mc.holds.create(
-        card_token=card_token, amount=150000, invoice_id=_uid(), expiry=60
+    hold = _guard(
+        lambda: mc.holds.create(
+            card_token=card_token, amount=150000, invoice_id=_uid(), expiry=60
+        )
     )
     hid = hold["id"]
     assert mc.holds.confirm(hid, otp=TEST_CARD["otp"])["status"] == "active"
@@ -210,8 +232,35 @@ def test_hold_confirm_then_debit(card_token):
 
 def test_hold_confirm_then_cancel(card_token):
     mc = _gw()
-    hold = mc.holds.create(
-        card_token=card_token, amount=50000, invoice_id=_uid(), expiry=60
+    hold = _guard(
+        lambda: mc.holds.create(
+            card_token=card_token, amount=50000, invoice_id=_uid(), expiry=60
+        )
     )
     mc.holds.confirm(hold["id"], otp=TEST_CARD["otp"])
     assert mc.holds.cancel(hold["id"])["status"] == "canceled"
+
+
+def test_app_pay_returns_checkout_url(live):
+    res = _gw().payments.app_pay(
+        payment_system="payme", amount=150000, invoice_id=_uid()
+    )
+    assert res["checkout_url"].startswith("http")
+
+
+def test_send_fiscal(card_token):
+    mc = _gw()
+    pay, _ = _pay(mc, card_token, 150000)
+    try:
+        res = mc.payments.send_fiscal(
+            pay["uuid"], url="https://ofd.example.uz/check/abc"
+        )
+        assert isinstance(res, (dict, list))
+    except ExternalServiceError as exc:
+        # store 105 has online fiscalization enabled -> manual fiscal rejected
+        assert exc.code == "ERROR_FIELDS"
+    finally:
+        try:
+            mc.payments.refund(pay["uuid"])
+        except PaymentException:
+            pass
