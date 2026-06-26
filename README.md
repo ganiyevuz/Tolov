@@ -275,6 +275,38 @@ Multicard uses token-based auth (the SDK fetches and refreshes the JWT for you)
 and a single `store_id`. The top-level `create_payment` opens an invoice
 (payment page) and returns its `checkout_url`.
 
+> **One integration, every method.** Multicard is an aggregator — a single
+> `MulticardGateway` lets your customers pay with **any** of the methods below
+> (cards, wallets, and banks) on one checkout page. No separate per-provider
+> integration needed.
+
+<table>
+<tr>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/payme.svg" width="44" height="44" alt="Payme"><br><sub>Payme</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/click.svg" width="44" height="44" alt="Click"><br><sub>Click</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/uzum.svg" width="44" height="44" alt="Uzum"><br><sub>Uzum</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/alif.svg" width="44" height="44" alt="Alif"><br><sub>Alif</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/apexbank.svg" width="44" height="44" alt="Apex"><br><sub>Apex</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/davrbank.svg" width="44" height="44" alt="Davr"><br><sub>Davr</sub></td>
+</tr>
+<tr>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/asiaalliancebank.svg" width="44" height="44" alt="Alliance Pay"><br><sub>Alliance</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/rahmat.svg" width="44" height="44" alt="Rahmat"><br><sub>Rahmat</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/asterium.svg" width="44" height="44" alt="Asterium"><br><sub>Asterium</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/paynet.svg" width="44" height="44" alt="Paynet"><br><sub>Paynet</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/anorbank.svg" width="44" height="44" alt="Anor"><br><sub>Anor</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/xazna.svg" width="44" height="44" alt="Xazna"><br><sub>Xazna</sub></td>
+</tr>
+<tr>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/beepul.svg" width="44" height="44" alt="Beepul"><br><sub>Beepul</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/oson.svg" width="44" height="44" alt="Oson"><br><sub>Oson</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/trastpay.svg" width="44" height="44" alt="Trast"><br><sub>Trast</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/ofb.svg" width="44" height="44" alt="OFB"><br><sub>OFB</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/morpara.svg" width="44" height="44" alt="Morpara"><br><sub>Morpara</sub></td>
+<td align="center" width="90"><img src="https://app.rhmt.uz/payments/sbp.svg" width="44" height="44" alt="SBP"><br><sub>СБП</sub></td>
+</tr>
+</table>
+
 ```python
 from tolov import MulticardGateway
 
