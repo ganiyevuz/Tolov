@@ -318,6 +318,26 @@ url = await mc.create_payment(id="order_1", amount=150_000, callback_url="...")
 status = await mc.check_payment(transaction_id="<uuid>")
 ```
 
+**Card binding (form).** Redirect the user to `form_url`; once they finish,
+read the resulting `card_token` either from the (unsigned) bind callback or by
+polling `check_binding(session_id)`. Store the token yourself — tolov does not
+persist cards.
+
+```python
+res = mc.cards.bind(
+    redirect_url="https://example.com/cards/ok",
+    redirect_decline_url="https://example.com/cards/fail",
+    callback_url="https://example.com/cards/callback",
+    phone="998901234567",
+)
+session_id, form_url = res["session_id"], res["form_url"]   # redirect user to form_url
+
+binding = mc.cards.check_binding(session_id)   # -> card_token, card_pan, status, ...
+mc.cards.info_by_token("<card_token>")
+mc.cards.check_pinfl(pan="8600...", pinfl="12345678901234")   # Uzcard/Humo only
+mc.cards.revoke_token("<card_token>")
+```
+
 ---
 
 ## Django Integration

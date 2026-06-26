@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Union
 from tolov.gateways.multicard.constants import STATUS_TO_STATE
 from tolov.gateways.multicard.invoices import MulticardInvoices
 from tolov.gateways.multicard.payments import MulticardPayments
+from tolov.gateways.multicard.cards import MulticardCards
 
 
 class MulticardGatewayInternal:
@@ -14,6 +15,7 @@ class MulticardGatewayInternal:
         self.store_id = store_id
         self.invoices = MulticardInvoices(session=session, store_id=store_id)
         self.payments = MulticardPayments(session=session)
+        self.cards = MulticardCards(session=session, store_id=store_id)
 
     @staticmethod
     def map_status(status: Optional[str]) -> int:

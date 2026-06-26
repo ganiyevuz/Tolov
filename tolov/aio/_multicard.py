@@ -6,6 +6,7 @@ from tolov.gateways.multicard.constants import MulticardEndpoints
 from tolov.gateways.multicard.session import AsyncMulticardSession
 from tolov.gateways.multicard.invoices import MulticardInvoices as _SyncInvoices
 from tolov.gateways.multicard.payments import MulticardPayments as _SyncPayments
+from tolov.gateways.multicard.cards import MulticardCards as _SyncCards
 from tolov.gateways.multicard.internal import MulticardGatewayInternal
 from tolov.gateways.multicard.client import MulticardGateway as _SyncGateway
 
@@ -41,6 +42,38 @@ class MulticardPayments(_SyncPayments):
         )
 
 
+class MulticardCards(_SyncCards):
+    """Async cards — inherits ``_build_bind``."""
+
+    @handle_exceptions
+    async def bind(
+        self, redirect_url, redirect_decline_url, callback_url, phone, *, pinfl=None
+    ) -> Dict[str, Any]:
+        body = self._build_bind(
+            redirect_url, redirect_decline_url, callback_url, phone, pinfl=pinfl
+        )
+        return await self.session.post(MulticardEndpoints.CARD_BIND, json_data=body)
+
+    @handle_exceptions
+    async def check_binding(self, session_id) -> Dict[str, Any]:
+        return await self.session.get(f"{MulticardEndpoints.CARD_BIND}/{session_id}")
+
+    @handle_exceptions
+    async def info_by_token(self, card_token) -> Dict[str, Any]:
+        return await self.session.get(f"{MulticardEndpoints.CARD}/{card_token}")
+
+    @handle_exceptions
+    async def check_pinfl(self, pan, pinfl) -> Dict[str, Any]:
+        return await self.session.post(
+            MulticardEndpoints.CARD_CHECK_PINFL,
+            json_data={"pan": pan, "pinfl": pinfl},
+        )
+
+    @handle_exceptions
+    async def revoke_token(self, card_token) -> Dict[str, Any]:
+        return await self.session.delete(f"{MulticardEndpoints.CARD}/{card_token}")
+
+
 class MulticardGateway(_SyncGateway):
     """Async Multicard gateway — async session + async sub-clients."""
 
@@ -55,8 +88,10 @@ class MulticardGateway(_SyncGateway):
         )
         self.invoices = MulticardInvoices(session=self.session, store_id=self.store_id)
         self.payments = MulticardPayments(session=self.session)
+        self.cards = MulticardCards(session=self.session, store_id=self.store_id)
         self._internal.invoices = self.invoices
         self._internal.payments = self.payments
+        self._internal.cards = self.cards
 
     @handle_exceptions
     async def create_payment(
