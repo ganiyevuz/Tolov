@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.1.0] - 2026-06-26
+## [2.1.0] - 2026-06-27
 
 ### Added
 
@@ -59,5 +59,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed sensitive data (PANs, card tokens, secrets) from error-path logs across
   all gateways.
 
-[Unreleased]: https://github.com/ganiyevuz/tolov/compare/v2.1.0...HEAD
-[2.1.0]: https://github.com/ganiyevuz/tolov/releases/tag/v2.1.0
+[Unreleased]: https://github.com/ganiyevuz/Tolov/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/ganiyevuz/Tolov/releases/tag/v2.1.0
