@@ -5,6 +5,7 @@ from tolov.gateways.payme.client import PaymeGateway
 from tolov.gateways.click.client import ClickGateway
 from tolov.gateways.uzum.client import UzumGateway
 from tolov.gateways.paynet.client import PaynetGateway
+from tolov.gateways.multicard.client import MulticardGateway
 
 
 def create_gateway(gateway_type: str, **kwargs) -> BasePaymentGateway:
@@ -30,5 +31,7 @@ def create_gateway(gateway_type: str, **kwargs) -> BasePaymentGateway:
         return UzumGateway(**kwargs)
     if gateway_type.lower() == PaymentGateway.PAYNET.value:
         return PaynetGateway(**kwargs)
+    if gateway_type.lower() == PaymentGateway.MULTICARD.value:
+        return MulticardGateway(**kwargs)
 
     raise ValueError(f"Unsupported gateway type: {gateway_type}")

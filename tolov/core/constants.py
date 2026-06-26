@@ -22,3 +22,4 @@ class PaymentGateway(Enum):
     UZUM = "uzum"
     PAYNET = "paynet"
     OCTO = "octo"
+    MULTICARD = "multicard"

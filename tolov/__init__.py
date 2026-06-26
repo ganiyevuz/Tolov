@@ -35,6 +35,7 @@ from tolov.gateways.payme.client import PaymeGateway  # noqa: E402
 from tolov.gateways.click.client import ClickGateway  # noqa: E402
 from tolov.gateways.uzum.client import UzumGateway  # noqa: E402
 from tolov.gateways.octo.client import OctoGateway  # noqa: E402
+from tolov.gateways.multicard.client import MulticardGateway  # noqa: E402
 from tolov.core.constants import PaymentGateway  # noqa: E402
 from tolov.factory import create_gateway  # noqa: E402
 
@@ -59,6 +60,7 @@ __all__ = [
     "ClickGateway",
     "UzumGateway",
     "OctoGateway",
+    "MulticardGateway",
     "PaymentGateway",
     # Factory
     "create_gateway",

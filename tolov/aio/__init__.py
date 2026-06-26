@@ -13,6 +13,7 @@ from tolov.aio._payme import PaymeGateway, PaymeCards, PaymeReceipts
 from tolov.aio._click import ClickGateway, ClickMerchantApi
 from tolov.aio._octo import OctoGateway
 from tolov.aio._uzum import UzumGateway
+from tolov.aio._multicard import MulticardGateway
 
 __all__ = [
     "AsyncHttpClient",
@@ -23,4 +24,5 @@ __all__ = [
     "ClickMerchantApi",
     "OctoGateway",
     "UzumGateway",
+    "MulticardGateway",
 ]
