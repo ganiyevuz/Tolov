@@ -13,6 +13,7 @@ from loguru import logger
 
 from django.views import View
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils.module_loading import import_string
 
@@ -27,6 +28,12 @@ class MulticardWebhook(BasePaymentProcessor, View):
         super().__init__(**kwargs)
         cfg = settings.TOLOV.get("MULTICARD", {})
         self.secret = cfg.get("CALLBACK_SECRET") or cfg.get("SECRET", "")
+        if not self.secret:
+            # Fail closed: without a secret every signature would be forgeable.
+            raise ImproperlyConfigured(
+                "TOLOV.MULTICARD.SECRET (or CALLBACK_SECRET) is required to "
+                "verify Multicard webhook signatures."
+            )
         self.account_field = cfg.get("ACCOUNT_FIELD", "id")
         model_path = cfg.get("ACCOUNT_MODEL")
         try:
@@ -48,8 +55,8 @@ class MulticardWebhook(BasePaymentProcessor, View):
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "invalid json"}, status=400)
 
-        received = params.get("sign", "")
-        if not hmac.compare_digest(received, self._expected_sign(params)):
+        received = params.get("sign") or ""
+        if not hmac.compare_digest(str(received), self._expected_sign(params)):
             logger.warning(
                 "Multicard webhook: bad signature for invoice {}",
                 params.get("invoice_id"),
