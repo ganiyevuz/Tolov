@@ -361,6 +361,19 @@ mc.payments.partial_refund("<uuid>", refund_amount=20_000, ofd=[...])
 mc.payments.send_fiscal("<uuid>", url="https://ofd.example/check/...")
 ```
 
+**Holds** (block funds, then debit or cancel; `expiry` in minutes, ≤ 30 days):
+
+```python
+hold = mc.holds.create(card_token="<card_token>", amount=500_000,
+                       invoice_id="order_1", expiry=60)
+hold_id = hold["id"]
+mc.holds.confirm(hold_id, otp="123456")     # block the funds
+mc.holds.debit(hold_id, amount=300_000)     # capture (partial allowed)
+# or release before capture:
+mc.holds.cancel(hold_id)
+mc.holds.info(hold_id)
+```
+
 ---
 
 ## Django Integration

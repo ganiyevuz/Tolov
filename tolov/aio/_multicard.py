@@ -7,6 +7,7 @@ from tolov.gateways.multicard.session import AsyncMulticardSession
 from tolov.gateways.multicard.invoices import MulticardInvoices as _SyncInvoices
 from tolov.gateways.multicard.payments import MulticardPayments as _SyncPayments
 from tolov.gateways.multicard.cards import MulticardCards as _SyncCards
+from tolov.gateways.multicard.holds import MulticardHolds as _SyncHolds
 from tolov.gateways.multicard.internal import MulticardGatewayInternal
 from tolov.gateways.multicard.client import MulticardGateway as _SyncGateway
 
@@ -105,6 +106,36 @@ class MulticardCards(_SyncCards):
         return await self.session.delete(f"{MulticardEndpoints.CARD}/{card_token}")
 
 
+class MulticardHolds(_SyncHolds):
+    """Async holds — reuses ``_build_create`` / ``_build_debit``."""
+
+    @handle_exceptions
+    async def create(self, card_token, amount, invoice_id, expiry, **kwargs) -> Dict[str, Any]:
+        body = self._build_create(card_token, amount, invoice_id, expiry, **kwargs)
+        return await self.session.post(MulticardEndpoints.HOLD, json_data=body)
+
+    @handle_exceptions
+    async def confirm(self, hold_id, otp) -> Dict[str, Any]:
+        return await self.session.put(
+            f"{MulticardEndpoints.HOLD}/{hold_id}", json_data={"otp": otp}
+        )
+
+    @handle_exceptions
+    async def debit(self, hold_id, amount, **kwargs) -> Dict[str, Any]:
+        body = self._build_debit(amount, **kwargs)
+        return await self.session.put(
+            f"{MulticardEndpoints.HOLD}/{hold_id}/charge", json_data=body
+        )
+
+    @handle_exceptions
+    async def info(self, hold_id) -> Dict[str, Any]:
+        return await self.session.get(f"{MulticardEndpoints.HOLD}/{hold_id}")
+
+    @handle_exceptions
+    async def cancel(self, hold_id) -> Dict[str, Any]:
+        return await self.session.delete(f"{MulticardEndpoints.HOLD}/{hold_id}")
+
+
 class MulticardGateway(_SyncGateway):
     """Async Multicard gateway — async session + async sub-clients."""
 
@@ -120,9 +151,11 @@ class MulticardGateway(_SyncGateway):
         self.invoices = MulticardInvoices(session=self.session, store_id=self.store_id)
         self.payments = MulticardPayments(session=self.session, store_id=self.store_id)
         self.cards = MulticardCards(session=self.session, store_id=self.store_id)
+        self.holds = MulticardHolds(session=self.session, store_id=self.store_id)
         self._internal.invoices = self.invoices
         self._internal.payments = self.payments
         self._internal.cards = self.cards
+        self._internal.holds = self.holds
 
     @handle_exceptions
     async def create_payment(

@@ -5,6 +5,7 @@ from tolov.gateways.multicard.constants import STATUS_TO_STATE
 from tolov.gateways.multicard.invoices import MulticardInvoices
 from tolov.gateways.multicard.payments import MulticardPayments
 from tolov.gateways.multicard.cards import MulticardCards
+from tolov.gateways.multicard.holds import MulticardHolds
 
 
 class MulticardGatewayInternal:
@@ -16,6 +17,7 @@ class MulticardGatewayInternal:
         self.invoices = MulticardInvoices(session=session, store_id=store_id)
         self.payments = MulticardPayments(session=session, store_id=store_id)
         self.cards = MulticardCards(session=session, store_id=store_id)
+        self.holds = MulticardHolds(session=session, store_id=store_id)
 
     @staticmethod
     def map_status(status: Optional[str]) -> int:

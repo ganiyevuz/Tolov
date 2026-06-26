@@ -17,6 +17,8 @@ class MulticardEndpoints:
     CARD = "/payment/card"  # GET/DELETE /{card_token}
     CARD_BIND = "/payment/card/bind"  # POST bind; GET /{session_id} check state
     CARD_CHECK_PINFL = "/payment/card/check-pinfl"  # POST
+    HOLD = "/payment/hold"  # POST create; PUT/GET/DELETE /{id}; PUT /{id}/charge
+    CREDIT = "/payment/credit"  # POST payout; PUT/GET /{uuid}
 
 
 class MulticardStatus:
