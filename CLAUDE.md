@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`tolov` is a published PyPI library: a unified payment SDK for Uzbekistan's providers — **Payme, Click, Uzum, Paynet, Octo, Multicard** — exposing one consistent API across all of them, in both sync and async flavors, with drop-in webhook handlers for Django, FastAPI, and Flask. It is a *library*, not an application: no server to run and no settings module. Tests live under `tests/` (Multicard only so far): `respx`-mocked unit tests plus live sandbox integration tests (marked `live`, auto-skipped when the sandbox is unreachable).
+`tolov` is a published PyPI library: a unified payment SDK for Uzbekistan's providers — **Payme, Click, Uzum, Paynet, Octo, Multicard** — exposing one consistent API across all of them, in both sync and async flavors, with drop-in webhook handlers for Django and FastAPI. It is a *library*, not an application: no server to run and no settings module. Tests live under `tests/` (Multicard only so far): `respx`-mocked unit tests plus live sandbox integration tests (marked `live`, auto-skipped when the sandbox is unreachable).
 
 ## Commands
 
@@ -39,7 +39,7 @@ Three layers, plus framework integrations:
 tolov/core/        shared abstractions used by every gateway
 tolov/gateways/    one sub-package per provider (the sync implementation)
 tolov/aio/         async variants of the gateways
-tolov/integrations/{django,fastapi,flask}/   webhook handlers + persistence
+tolov/integrations/{django,fastapi}/   webhook handlers + persistence
 tolov/factory.py   create_gateway("payme", **kwargs) string dispatch
 ```
 
@@ -75,5 +75,5 @@ Wraps public gateway methods. It detects coroutine functions and returns the mat
 - **Bump `__version__` and `pyproject.toml` together.** The version lives in two places (`tolov/__init__.py` `__version__` and `[project].version`); update both in the same change so they don't drift.
 - **Python ≥ 3.9.** Use `typing.Dict/Optional/Union` rather than 3.10+ `X | Y` / built-in generics, to preserve compatibility.
 - **Logging is `loguru`** throughout (`from loguru import logger`) — matches the global rule; never use stdlib `logging`.
-- **Framework deps are optional extras.** `tolov/__init__.py` sets `HAS_DJANGO`/`HAS_FASTAPI`/`HAS_FLASK` by trying the import; integration code must not be imported at top level of the always-on path. New gateway code in `core`/`gateways` must not hard-depend on Django/FastAPI/Flask.
+- **Framework deps are optional extras.** `tolov/__init__.py` sets `HAS_DJANGO`/`HAS_FASTAPI` by trying the import; integration code must not be imported at top level of the always-on path. New gateway code in `core`/`gateways` must not hard-depend on Django/FastAPI.
 - **Adding a provider** means: a `gateways/<name>/` package (client + internal + constants), an `aio/_<name>.py` async subclass, a `PaymentGateway` enum entry, a `factory.create_gateway` branch, and integration webhook handlers + a model choice.

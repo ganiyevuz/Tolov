@@ -18,7 +18,7 @@ def check_dependencies(framework: str, raise_error: bool = False) -> bool:
     Check if dependencies for a specific framework are installed.
 
     Args:
-        framework: Framework name ('django', 'fastapi', 'flask')
+        framework: Framework name ('django', 'fastapi')
         raise_error: If True, raise DependencyError instead of warning
 
     Returns:
@@ -37,11 +37,6 @@ def check_dependencies(framework: str, raise_error: bool = False) -> bool:
             "packages": ["fastapi", "sqlalchemy", "pydantic"],
             "install_cmd": "pip install tolov[fastapi]",
             "manual_install": "pip install fastapi sqlalchemy pydantic python-multipart",
-        },
-        "flask": {
-            "packages": ["flask", "flask_sqlalchemy"],
-            "install_cmd": "pip install tolov[flask]",
-            "manual_install": "pip install flask flask-sqlalchemy",
         },
     }
 
@@ -104,7 +99,7 @@ def get_missing_dependencies(framework: str) -> List[str]:
     Get list of missing dependencies for a framework.
 
     Args:
-        framework: Framework name ('django', 'fastapi', 'flask')
+        framework: Framework name ('django', 'fastapi')
 
     Returns:
         List of missing package names
@@ -112,7 +107,6 @@ def get_missing_dependencies(framework: str) -> List[str]:
     dependencies_map = {
         "django": ["django"],
         "fastapi": ["fastapi", "sqlalchemy", "pydantic"],
-        "flask": ["flask", "flask_sqlalchemy"],
     }
 
     if framework not in dependencies_map:
@@ -133,13 +127,13 @@ def install_framework_dependencies(framework: str) -> bool:
     Attempt to install framework dependencies using pip.
 
     Args:
-        framework: Framework name ('django', 'fastapi', 'flask')
+        framework: Framework name ('django', 'fastapi')
 
     Returns:
         bool: True if installation successful
     """
 
-    extras_map = {"django": "django", "fastapi": "fastapi", "flask": "flask"}
+    extras_map = {"django": "django", "fastapi": "fastapi"}
 
     if framework not in extras_map:
         raise ValueError(f"Unknown framework: {framework}")

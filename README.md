@@ -42,7 +42,7 @@
 **Key Features**
 
 - Sync & async (httpx)
-- Django, FastAPI, Flask integrations
+- Django, FastAPI integrations
 - Webhook handlers out of the box
 - Automatic transaction tracking
 - Card tokenization (Payme, Click)
@@ -82,7 +82,6 @@ With framework extras:
 ```bash
 pip install tolov[django]     # Django + DRF
 pip install tolov[fastapi]    # FastAPI + SQLAlchemy
-pip install tolov[flask]      # Flask + Flask-SQLAlchemy
 ```
 
 ---

@@ -47,6 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Kept `__version__` (`tolov/__init__.py`) in sync with `pyproject.toml`.
 
+### Removed
+
+- The non-functional `tolov[flask]` extra and the `HAS_FLASK` flag. There was
+  never any Flask integration code — only Django and FastAPI are implemented.
+
 ### Security
 
 - Multicard webhook handlers **fail closed** when no signing secret is configured,

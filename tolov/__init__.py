@@ -1,8 +1,9 @@
 """
 Tolov - Unified payment library for Uzbekistan payment systems.
 
-This library provides a unified interface for working with Payme, Click, and Uzum
-payment systems in Uzbekistan. It supports Django, Flask, and FastAPI.
+This library provides a unified interface for working with Payme, Click, Uzum,
+Paynet, Octo, and Multicard payment systems in Uzbekistan. It supports Django
+and FastAPI.
 """
 
 __version__ = "2.1.0"
@@ -21,13 +22,6 @@ try:
     HAS_FASTAPI = True
 except ImportError:
     HAS_FASTAPI = False
-
-try:
-    import flask  # noqa: F401
-
-    HAS_FLASK = True
-except ImportError:
-    HAS_FLASK = False
 
 # Import core components
 from tolov.core.base import BasePaymentGateway  # noqa: E402
@@ -53,7 +47,6 @@ __all__ = [
     # Framework availability flags
     "HAS_DJANGO",
     "HAS_FASTAPI",
-    "HAS_FLASK",
     # Core classes
     "BasePaymentGateway",
     "PaymeGateway",
