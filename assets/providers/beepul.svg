@@ -1,0 +1,24 @@
+<svg width="54" height="54" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><clipPath id="r_beepul"><rect width="54" height="54" rx="14.58" ry="14.58"/></clipPath></defs><g clip-path="url(#r_beepul)">
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#2a2a2a"/>
+      <stop offset="100%" stop-color="#111111"/>
+    </radialGradient>
+
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="50%" stop-color="#FFA500"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="96" ry="96" fill="url(#bgGradient)"/>
+
+  <g fill="none" stroke="url(#goldGradient)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round">
+
+    <rect x="112" y="98" width="180" height="320" rx="30" ry="30" />
+
+    <rect x="186" y="263" width="214" height="155" rx="30" ry="30" fill="url(#bgGradient)"/>
+
+  </g>
+</g></svg>

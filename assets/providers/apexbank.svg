@@ -1,0 +1,6 @@
+<svg width="35" height="35" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="r_apexbank"><rect width="35" height="35" rx="9.45" ry="9.45"/></clipPath></defs><g clip-path="url(#r_apexbank)">
+    <g>
+        <path d="M35 0H0V35H35V0Z" fill="#111111"/>
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M23.8614 23.6383L17.4997 30L11.1386 23.6383L17.4997 17.2766L23.8614 23.6383ZM5 17.5L8.77781 21.2777L17.4997 12.5553L26.2222 21.2777L30 17.5L17.4997 5L5 17.5Z" fill="#D40000"/>
+    </g>
+</g></svg>
