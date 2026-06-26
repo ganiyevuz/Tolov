@@ -163,30 +163,41 @@ def _confirm(mc, payment):
     return mc.payments.confirm(uuid_)
 
 
-def _guard(fn):
-    """Run fn; skip the test if the sandbox throttles SMS for the test card."""
-    try:
-        return fn()
-    except ExternalServiceError as exc:
-        if exc.code == "ERROR_SMS_TO_MANY":
-            pytest.skip("sandbox SMS rate limit reached for the test card")
-        raise
+def skip_on_sms_limit(fn):
+    """Skip a live test when the sandbox throttles SMS for the test card.
+
+    Minting and OTP-required payments/holds all consume the test card's SMS
+    quota; under heavy use the sandbox returns ERROR_SMS_TO_MANY. Skipping
+    (vs. failing) keeps these tests honest about flows we couldn't exercise.
+    """
+    import functools
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except ExternalServiceError as exc:
+            if exc.code == "ERROR_SMS_TO_MANY":
+                pytest.skip("sandbox SMS rate limit reached for the test card")
+            raise
+
+    return wrapper
 
 
 def _pay(mc, card_token, amount):
     """Create + confirm a token payment, returning (payment, confirmed)."""
-    pay = _guard(
-        lambda: mc.payments.create_by_token(
-            card_token=card_token, amount=amount, invoice_id=_uid()
-        )
+    pay = mc.payments.create_by_token(
+        card_token=card_token, amount=amount, invoice_id=_uid()
     )
     return pay, _confirm(mc, pay)
 
 
+@skip_on_sms_limit
 def test_card_info_by_token(card_token):
     assert _gw().cards.info_by_token(card_token)["status"] == "active"
 
 
+@skip_on_sms_limit
 def test_token_payment_confirm_then_refund(card_token):
     mc = _gw()
     pay, confirmed = _pay(mc, card_token, 150000)
@@ -195,6 +206,7 @@ def test_token_payment_confirm_then_refund(card_token):
     assert mc.payments.refund(pay["uuid"])["status"] == "revert"
 
 
+@skip_on_sms_limit
 def test_token_payment_partial_refund(card_token):
     mc = _gw()
     pay, confirmed = _pay(mc, card_token, 200000)
@@ -217,12 +229,11 @@ def test_token_payment_partial_refund(card_token):
         assert mc.payments.refund(pay["uuid"])["status"] == "revert"
 
 
+@skip_on_sms_limit
 def test_hold_confirm_then_debit(card_token):
     mc = _gw()
-    hold = _guard(
-        lambda: mc.holds.create(
-            card_token=card_token, amount=150000, invoice_id=_uid(), expiry=60
-        )
+    hold = mc.holds.create(
+        card_token=card_token, amount=150000, invoice_id=_uid(), expiry=60
     )
     hid = hold["id"]
     assert mc.holds.confirm(hid, otp=TEST_CARD["otp"])["status"] == "active"
@@ -230,12 +241,11 @@ def test_hold_confirm_then_debit(card_token):
     assert mc.holds.debit(hid, amount=100000)["status"] == "success"
 
 
+@skip_on_sms_limit
 def test_hold_confirm_then_cancel(card_token):
     mc = _gw()
-    hold = _guard(
-        lambda: mc.holds.create(
-            card_token=card_token, amount=50000, invoice_id=_uid(), expiry=60
-        )
+    hold = mc.holds.create(
+        card_token=card_token, amount=50000, invoice_id=_uid(), expiry=60
     )
     mc.holds.confirm(hold["id"], otp=TEST_CARD["otp"])
     assert mc.holds.cancel(hold["id"])["status"] == "canceled"
@@ -248,6 +258,7 @@ def test_app_pay_returns_checkout_url(live):
     assert res["checkout_url"].startswith("http")
 
 
+@skip_on_sms_limit
 def test_send_fiscal(card_token):
     mc = _gw()
     pay, _ = _pay(mc, card_token, 150000)
