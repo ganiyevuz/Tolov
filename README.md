@@ -14,7 +14,7 @@
 
 <p align="center">
   <strong>Accept payments from every major provider in Uzbekistan with a single, beautiful API.</strong><br>
-  <sub>Payme &bull; Click &bull; Uzum &bull; Paynet &bull; Octo &mdash; sync & async &mdash; Django & FastAPI ready</sub>
+  <sub>Payme &bull; Click &bull; Uzum &bull; Paynet &bull; Octo &bull; Multicard &mdash; sync & async &mdash; Django & FastAPI ready</sub>
 </p>
 
 <br>
@@ -762,13 +762,26 @@ cancel_payment(transaction_id)  -> dict          # Cancellation result
 
 ```python
 # Sync
-from tolov import PaymeGateway, ClickGateway, OctoGateway, UzumGateway
+from tolov import PaymeGateway, ClickGateway, OctoGateway, UzumGateway, MulticardGateway
 
 # Async (same class names, same methods)
-from tolov.aio import PaymeGateway, ClickGateway, OctoGateway, UzumGateway
+from tolov.aio import PaymeGateway, ClickGateway, OctoGateway, UzumGateway, MulticardGateway
 ```
 
 Methods that make HTTP calls become `async` automatically. Methods that only build URLs (like `create_payment` for Payme, Click, Uzum, Paynet) remain synchronous even on async gateways.
+
+---
+
+## Development
+
+```bash
+uv sync                          # install the dev environment
+uv run pytest                    # full suite (live tests skip if the sandbox is unreachable)
+uv run pytest -m "not live"      # offline only (respx-mocked)
+uv run pytest -m live            # live Multicard sandbox integration tests
+```
+
+Release notes live in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
