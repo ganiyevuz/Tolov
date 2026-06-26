@@ -6,6 +6,7 @@ The public handlers in routes.py inherit from these classes.
 """
 
 import hashlib
+import hmac
 import json
 from loguru import logger
 from datetime import datetime
@@ -915,4 +916,101 @@ class ClickWebhookHandlerInternal:
         self, params: Dict[str, Any], transaction: PaymentTransaction
     ) -> None:
         """Called when a payment is cancelled."""
+        pass
+
+
+class MulticardWebhookHandlerInternal:
+    """
+    Internal Multicard success-callback handler (FastAPI).
+
+    Verifies md5(store_id+invoice_id+amount+secret) and upserts a
+    PaymentTransaction. (The official docs claim sha1(uuid+...) — that is wrong
+    for this callback.)
+    """
+
+    def __init__(
+        self,
+        db: Session,
+        secret: str,
+        account_model: Any,
+        account_field: str = "id",
+    ):
+        if not secret:
+            # Fail closed: without a secret every signature would be forgeable.
+            raise ValueError(
+                "Multicard webhook `secret` is required to verify signatures."
+            )
+        self.db = db
+        self.secret = secret
+        self.account_model = account_model
+        self.account_field = account_field
+
+    def _expected_sign(self, params: Dict[str, Any]) -> str:
+        raw = (
+            f"{params.get('store_id')}{params.get('invoice_id')}"
+            f"{params.get('amount')}{self.secret}"
+        )
+        return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+    async def handle_webhook(self, request: Request) -> Response:
+        """Handle the Multicard success callback."""
+        params = await request.json()
+
+        received = params.get("sign") or ""
+        if not hmac.compare_digest(str(received), self._expected_sign(params)):
+            logger.warning(
+                "Multicard webhook: bad signature for invoice {}",
+                params.get("invoice_id"),
+            )
+            return Response(
+                content=json.dumps({"success": False, "error": "invalid sign"}),
+                media_type="application/json",
+                status_code=403,
+            )
+
+        transaction = self._upsert(params)
+        self.successfully_payment(params, transaction)
+        return Response(
+            content=json.dumps({"success": True}),
+            media_type="application/json",
+            status_code=200,
+        )
+
+    def _upsert(self, params: Dict[str, Any]) -> PaymentTransaction:
+        account_id = params.get("invoice_id")
+        if self.account_model is not None:
+            account = self._find_account(account_id)
+            if account is not None:
+                account_id = account.id
+
+        transaction = PaymentTransaction.create_transaction(
+            db=self.db,
+            gateway=PaymentTransaction.MULTICARD,
+            transaction_id=params.get("uuid"),
+            account_id=account_id,
+            amount=Decimal(str(params.get("amount", 0))) / 100,
+            extra_data={
+                "card_token": params.get("card_token"),
+                "card_pan": params.get("card_pan"),
+                "ps": params.get("ps"),
+                "receipt_url": params.get("receipt_url"),
+                "phone": params.get("phone"),
+                "billing_id": params.get("billing_id"),
+                "payment_time": params.get("payment_time"),
+                "raw_params": params,
+            },
+        )
+        transaction.mark_as_paid(self.db)
+        return transaction
+
+    def _find_account(self, value: Any) -> Any:
+        lookup = "id" if self.account_field == "order_id" else self.account_field
+        if lookup == "id" and isinstance(value, str) and value.isdigit():
+            value = int(value)
+        return self.db.query(self.account_model).filter_by(**{lookup: value}).first()
+
+    def successfully_payment(
+        self, params: Dict[str, Any], transaction: PaymentTransaction
+    ) -> None:
+        """Called when a payment is successful."""
         pass

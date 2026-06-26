@@ -22,4 +22,9 @@ from .schemas import (  # noqa: F401
     ClickWebhookRequest,
     ClickWebhookResponse,
 )
-from .routes import router, PaymeWebhookHandler, ClickWebhookHandler  # noqa: F401
+from .routes import (  # noqa: F401
+    router,
+    PaymeWebhookHandler,
+    ClickWebhookHandler,
+    MulticardWebhookHandler,
+)

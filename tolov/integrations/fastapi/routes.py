@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from .internal import (
     PaymeWebhookHandlerInternal,
     ClickWebhookHandlerInternal,
+    MulticardWebhookHandlerInternal,
 )
 from .models import PaymentTransaction
 
@@ -294,4 +295,59 @@ class ClickWebhookHandler(ClickWebhookHandlerInternal):
             params: Request parameters
             transaction: Transaction object
         """
+        pass
+
+
+class MulticardWebhookHandler(MulticardWebhookHandlerInternal):
+    """
+    Base Multicard webhook handler for FastAPI (success callback).
+
+    Verifies md5(store_id+invoice_id+amount+secret), upserts the
+    PaymentTransaction, and marks it paid. Override ``successfully_payment``
+    to update your order.
+
+    Example:
+    ```python
+    from tolov.integrations.fastapi import MulticardWebhookHandler
+
+    class CustomMulticardWebhookHandler(MulticardWebhookHandler):
+        def successfully_payment(self, params, transaction):
+            order = (db.query(Order)
+                     .filter(Order.id == transaction.account_id)
+                     .first())
+            order.status = "paid"
+            db.commit()
+
+
+    @app.post("/payments/multicard/webhook")
+    async def multicard_webhook(request: Request, db: Session = Depends(get_db)):
+        handler = CustomMulticardWebhookHandler(
+            db=db, secret="your_callback_secret", account_model=Order,
+        )
+        return await handler.handle_webhook(request)
+    ```
+    """
+
+    def __init__(
+        self,
+        db: Session,
+        secret: str,
+        account_model: Any,
+        account_field: str = "id",
+    ):
+        super().__init__(
+            db=db,
+            secret=secret,
+            account_model=account_model,
+            account_field=account_field,
+        )
+
+    async def handle_webhook(self, request: Request) -> Response:
+        """Handle webhook request from Multicard."""
+        return await super().handle_webhook(request)
+
+    def successfully_payment(
+        self, params: Dict[str, Any], transaction: PaymentTransaction
+    ) -> None:
+        """Called when a payment is successful."""
         pass

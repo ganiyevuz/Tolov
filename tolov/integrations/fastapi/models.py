@@ -20,6 +20,7 @@ class PaymentTransaction(Base):
     # Payment gateway choices
     PAYME = "payme"
     CLICK = "click"
+    MULTICARD = "multicard"
 
     # Transaction states
     CREATED = 0
