@@ -80,9 +80,10 @@ class MulticardSession:
             if isinstance(data, dict) and "error" in data:
                 map_error(data)
             raise
-        data = unwrap(payload)
-        self._token = data["token"]
-        self._expiry = _parse_expiry(data["expiry"])
+        # POST /auth returns {token, role, expiry} directly — NOT the
+        # {success, data} envelope the other endpoints use.
+        self._token = payload["token"]
+        self._expiry = _parse_expiry(payload["expiry"])
         logger.debug("Multicard token refreshed, expires {}", self._expiry)
 
     def _auth_headers(self) -> Dict[str, str]:
@@ -151,9 +152,10 @@ class AsyncMulticardSession(MulticardSession):
             if isinstance(data, dict) and "error" in data:
                 map_error(data)
             raise
-        data = unwrap(payload)
-        self._token = data["token"]
-        self._expiry = _parse_expiry(data["expiry"])
+        # POST /auth returns {token, role, expiry} directly — NOT the
+        # {success, data} envelope the other endpoints use.
+        self._token = payload["token"]
+        self._expiry = _parse_expiry(payload["expiry"])
         logger.debug("Multicard token refreshed, expires {}", self._expiry)
 
     async def _auth_headers(self) -> Dict[str, str]:
