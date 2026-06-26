@@ -35,6 +35,7 @@ class MulticardWebhook(BasePaymentProcessor, View):
                 "verify Multicard webhook signatures."
             )
         self.account_field = cfg.get("ACCOUNT_FIELD", "id")
+        self.store_id = cfg.get("STORE_ID")  # optional: reject other stores' callbacks
         model_path = cfg.get("ACCOUNT_MODEL")
         try:
             self.account_model = import_string(model_path) if model_path else None
@@ -62,6 +63,14 @@ class MulticardWebhook(BasePaymentProcessor, View):
                 params.get("invoice_id"),
             )
             return HttpResponseForbidden("invalid sign")
+
+        if self.store_id is not None and str(params.get("store_id")) != str(self.store_id):
+            logger.warning(
+                "Multicard webhook: store_id mismatch (got {}, expected {})",
+                params.get("store_id"),
+                self.store_id,
+            )
+            return HttpResponseForbidden("store mismatch")
 
         transaction = self._upsert(params)
         self.successfully_payment(params, transaction)

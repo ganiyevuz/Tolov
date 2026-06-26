@@ -334,12 +334,14 @@ class MulticardWebhookHandler(MulticardWebhookHandlerInternal):
         secret: str,
         account_model: Any,
         account_field: str = "id",
+        store_id: Any = None,
     ):
         super().__init__(
             db=db,
             secret=secret,
             account_model=account_model,
             account_field=account_field,
+            store_id=store_id,
         )
 
     async def handle_webhook(self, request: Request) -> Response:

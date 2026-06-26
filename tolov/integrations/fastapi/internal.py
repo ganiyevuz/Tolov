@@ -934,6 +934,7 @@ class MulticardWebhookHandlerInternal:
         secret: str,
         account_model: Any,
         account_field: str = "id",
+        store_id: Optional[int] = None,
     ):
         if not secret:
             # Fail closed: without a secret every signature would be forgeable.
@@ -944,6 +945,7 @@ class MulticardWebhookHandlerInternal:
         self.secret = secret
         self.account_model = account_model
         self.account_field = account_field
+        self.store_id = store_id  # optional: reject other stores' callbacks
 
     def _expected_sign(self, params: Dict[str, Any]) -> str:
         raw = (
@@ -964,6 +966,18 @@ class MulticardWebhookHandlerInternal:
             )
             return Response(
                 content=json.dumps({"success": False, "error": "invalid sign"}),
+                media_type="application/json",
+                status_code=403,
+            )
+
+        if self.store_id is not None and str(params.get("store_id")) != str(self.store_id):
+            logger.warning(
+                "Multicard webhook: store_id mismatch (got {}, expected {})",
+                params.get("store_id"),
+                self.store_id,
+            )
+            return Response(
+                content=json.dumps({"success": False, "error": "store mismatch"}),
                 media_type="application/json",
                 status_code=403,
             )
