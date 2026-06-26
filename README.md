@@ -34,6 +34,7 @@
 | Uzum     | +        | +   | +        |
 | Paynet   | +        | -   | +        |
 | Octo     | +        | +   | +        |
+| Multicard | +       | +   | +        |
 
 </td>
 <td width="50%">
@@ -269,6 +270,54 @@ refund = octo.cancel_payment(
 )
 ```
 
+### Multicard
+
+Multicard uses token-based auth (the SDK fetches and refreshes the JWT for you)
+and a single `store_id`. The top-level `create_payment` opens an invoice
+(payment page) and returns its `checkout_url`.
+
+```python
+from tolov import MulticardGateway
+
+mc = MulticardGateway(
+    application_id="your_application_id",
+    secret="your_secret",
+    store_id=123,
+    is_test_mode=True,
+)
+
+# Create an invoice — returns checkout_url (amount in som)
+url = mc.create_payment(
+    id="order_1",
+    amount=150_000,
+    return_url="https://example.com/done",
+    callback_url="https://example.com/payments/webhook/multicard",
+)
+
+# Check status (by Multicard transaction uuid)
+status = mc.check_payment(transaction_id="<uuid>")   # -> {"status", "state", "data"}
+
+# Refund
+mc.cancel_payment(transaction_id="<uuid>")
+
+# Lower-level sub-clients (amounts in tiyin):
+mc.invoices.create(amount=15_000_000, invoice_id="order_1", callback_url="...")
+mc.invoices.get("<uuid>")
+mc.invoices.delete("<uuid>")     # annul an unpaid invoice
+mc.payments.info("<uuid>")
+mc.payments.refund("<uuid>")
+```
+
+Async — same names, `await` the HTTP calls:
+
+```python
+from tolov.aio import MulticardGateway
+
+mc = MulticardGateway(application_id="...", secret="...", store_id=123)
+url = await mc.create_payment(id="order_1", amount=150_000, callback_url="...")
+status = await mc.check_payment(transaction_id="<uuid>")
+```
+
 ---
 
 ## Django Integration
@@ -319,6 +368,14 @@ TOLOV = {
         "AMOUNT_FIELD": "amount",
         "ONE_TIME_PAYMENT": True,
     },
+    "MULTICARD": {
+        "APPLICATION_ID": "your_application_id",
+        "SECRET": "your_secret",          # also signs the success callback
+        "STORE_ID": 123,
+        # "CALLBACK_SECRET": "...",       # optional; defaults to SECRET
+        "ACCOUNT_MODEL": "orders.models.Order",
+        "ACCOUNT_FIELD": "id",
+    },
 }
 ```
 
@@ -353,6 +410,7 @@ from tolov.integrations.django.views import (
     BaseUzumWebhookView,
     BasePaynetWebhookView,
     BaseOctoWebhookView,
+    BaseMulticardWebhookView,
 )
 from .models import Order
 
@@ -442,6 +500,15 @@ class OctoWebhookView(BaseOctoWebhookView):
         order = Order.objects.get(id=transaction.account_id)
         order.status = "cancelled"
         order.save()
+
+
+class MulticardWebhookView(BaseMulticardWebhookView):
+    # Multicard's success callback fires only on a successful payment;
+    # the signature is verified for you before this runs.
+    def successfully_payment(self, params, transaction):
+        order = Order.objects.get(id=transaction.account_id)
+        order.status = "paid"
+        order.save()
 ```
 
 ### 4. URLs
@@ -460,6 +527,7 @@ urlpatterns = [
     path("payments/webhook/uzum/<str:action>/", UzumWebhookView.as_view()),
     path("payments/webhook/paynet/", PaynetWebhookView.as_view()),
     path("payments/webhook/octo/", OctoWebhookView.as_view()),
+    path("payments/webhook/multicard/", MulticardWebhookView.as_view()),
 ]
 ```
 
@@ -504,7 +572,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 ```python
 from fastapi import FastAPI, Request, Depends
 from sqlalchemy.orm import Session
-from tolov.integrations.fastapi import PaymeWebhookHandler, ClickWebhookHandler
+from tolov.integrations.fastapi import (
+    PaymeWebhookHandler,
+    ClickWebhookHandler,
+    MulticardWebhookHandler,
+)
 
 app = FastAPI()
 
@@ -565,6 +637,24 @@ async def click_webhook(request: Request, db: Session = Depends(get_db)):
         one_time_payment=True,
     )
     return await handler.handle_webhook(request)
+
+
+class CustomMulticardWebhookHandler(MulticardWebhookHandler):
+    def successfully_payment(self, params, transaction):
+        order = self.db.query(Order).filter(Order.id == transaction.account_id).first()
+        order.status = "paid"
+        self.db.commit()
+
+
+@app.post("/payments/multicard/webhook")
+async def multicard_webhook(request: Request, db: Session = Depends(get_db)):
+    handler = CustomMulticardWebhookHandler(
+        db=db,
+        secret="your_secret",          # the secret that signs the callback
+        account_model=Order,
+        account_field="id",
+    )
+    return await handler.handle_webhook(request)
 ```
 
 ---
@@ -580,6 +670,7 @@ async def click_webhook(request: Request, db: Session = Depends(get_db)):
 | `UzumGateway` | `service_id` |
 | `PaynetGateway` | `merchant_id` |
 | `OctoGateway` | `octo_shop_id`, `octo_secret` |
+| `MulticardGateway` | `application_id`, `secret`, `store_id` |
 
 All gateways accept `is_test_mode=True` for sandbox environments.
 
