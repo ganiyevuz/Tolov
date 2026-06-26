@@ -61,6 +61,12 @@ dev = [
     "wheel==0.38.1",
     "djangorestframework==3.14.0",
     "environs==9.5.0",
+    "pytest>=7.4",
+    "pytest-asyncio>=0.21",
+    "respx>=0.20",
+    "fastapi>=0.68",
+    "sqlalchemy>=1.4",
+    "python-multipart>=0.0.5",
 ]
 
 [build-system]
@@ -72,3 +78,11 @@ include = ["tolov*"]
 
 [tool.isort]
 profile = "black"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "live: hits the Multicard sandbox over the network (deselect with -m 'not live')",
+]
+filterwarnings = ["ignore::DeprecationWarning"]

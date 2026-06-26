@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`tolov` is a published PyPI library: a unified payment SDK for Uzbekistan's providers — **Payme, Click, Uzum, Paynet, Octo** — exposing one consistent API across all of them, in both sync and async flavors, with drop-in webhook handlers for Django, FastAPI, and Flask. It is a *library*, not an application: there is no server to run, no settings module, and (currently) no test suite.
+`tolov` is a published PyPI library: a unified payment SDK for Uzbekistan's providers — **Payme, Click, Uzum, Paynet, Octo, Multicard** — exposing one consistent API across all of them, in both sync and async flavors, with drop-in webhook handlers for Django, FastAPI, and Flask. It is a *library*, not an application: no server to run and no settings module. Tests live under `tests/` (Multicard only so far): `respx`-mocked unit tests plus live sandbox integration tests (marked `live`, auto-skipped when the sandbox is unreachable).
 
 ## Commands
 
@@ -16,10 +16,16 @@ uv build                         # build sdist + wheel into dist/
 uv publish                       # upload to PyPI (needs UV_PUBLISH_TOKEN)
 make upload                      # = ./scripts/release.sh (clean → build → publish)
 
+# Tests (pytest; asyncio_mode=auto, respx for HTTP mocking)
+uv run pytest                    # full suite (live tests skip if sandbox unreachable)
+uv run pytest -m "not live"      # mocked only, fully offline
+uv run pytest -m live            # live sandbox integration only
+uv run pytest tests/test_multicard_sdk.py -q   # a single file
+
 # Lint / format / type-check (dev deps, no make targets wired up)
 uv run black tolov               # formatter, pinned black==22.3.0
 uv run isort tolov               # import sorter (black profile)
-uv run flake8 tolov              # max-line-length = 121
+uv run flake8 tolov              # max-line-length = 121 (NB: flake8 4.0.1 is broken on py3.13)
 uv run mypy tolov
 ```
 
