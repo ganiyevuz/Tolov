@@ -338,6 +338,29 @@ mc.cards.check_pinfl(pan="8600...", pinfl="12345678901234")   # Uzcard/Humo only
 mc.cards.revoke_token("<card_token>")
 ```
 
+**Token payments, refunds & fiscal** (amounts in tiyin):
+
+```python
+# Charge a saved card token (optional split + OFD fiscal data)
+payment = mc.payments.create_by_token(
+    card_token="<card_token>",
+    amount=500_000,
+    invoice_id="order_1",
+    split=[{"type": "card", "amount": 100_000, "details": "partner share",
+            "recipient": "<bank-details-uuid>"}],
+)
+# If payment["otp_hash"] is not null, an SMS code is required:
+mc.payments.confirm(payment["uuid"], otp="123456")
+
+# Pay via an external app (payme/click/uzum/...) — returns checkout_url/deeplink
+app = mc.payments.app_pay(payment_system="payme", amount=500_000, invoice_id="order_2")
+
+mc.payments.info("<uuid>")
+mc.payments.refund("<uuid>")                                  # full refund
+mc.payments.partial_refund("<uuid>", refund_amount=20_000, ofd=[...])
+mc.payments.send_fiscal("<uuid>", url="https://ofd.example/check/...")
+```
+
 ---
 
 ## Django Integration

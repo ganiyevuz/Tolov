@@ -120,6 +120,9 @@ class MulticardSession:
     def put(self, endpoint, json_data=None):
         return self.request("PUT", endpoint, json_data=json_data)
 
+    def patch(self, endpoint, json_data=None):
+        return self.request("PATCH", endpoint, json_data=json_data)
+
     def delete(self, endpoint, json_data=None):
         return self.request("DELETE", endpoint, json_data=json_data)
 
@@ -188,6 +191,9 @@ class AsyncMulticardSession(MulticardSession):
 
     async def put(self, endpoint, json_data=None):
         return await self.request("PUT", endpoint, json_data=json_data)
+
+    async def patch(self, endpoint, json_data=None):
+        return await self.request("PATCH", endpoint, json_data=json_data)
 
     async def delete(self, endpoint, json_data=None):
         return await self.request("DELETE", endpoint, json_data=json_data)

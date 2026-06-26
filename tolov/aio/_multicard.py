@@ -29,16 +29,47 @@ class MulticardInvoices(_SyncInvoices):
 
 
 class MulticardPayments(_SyncPayments):
-    """Async payments — info + refund."""
+    """Async payments — reuses the sync ``_build_*`` helpers."""
 
     @handle_exceptions
     async def info(self, uuid) -> Dict[str, Any]:
         return await self.session.get(f"{MulticardEndpoints.PAYMENT}/{uuid}")
 
     @handle_exceptions
+    async def create_by_token(self, card_token, amount, invoice_id, **kwargs) -> Dict[str, Any]:
+        body = self._build_create_by_token(card_token, amount, invoice_id, **kwargs)
+        return await self.session.post(MulticardEndpoints.PAYMENT, json_data=body)
+
+    @handle_exceptions
+    async def app_pay(self, payment_system, amount, invoice_id, **kwargs) -> Dict[str, Any]:
+        body = self._build_app_pay(payment_system, amount, invoice_id, **kwargs)
+        return await self.session.post(MulticardEndpoints.PAYMENT, json_data=body)
+
+    @handle_exceptions
+    async def confirm(self, uuid, otp=None, *, debit_available=None) -> Dict[str, Any]:
+        body = self._build_confirm(otp, debit_available)
+        return await self.session.put(
+            f"{MulticardEndpoints.PAYMENT}/{uuid}", json_data=body
+        )
+
+    @handle_exceptions
     async def refund(self, uuid) -> Dict[str, Any]:
         return await self.session.delete(
             f"{MulticardEndpoints.PAYMENT}/{uuid}", json_data={}
+        )
+
+    @handle_exceptions
+    async def partial_refund(self, uuid, refund_amount, ofd, *, card_pan=None) -> Dict[str, Any]:
+        body = self._build_partial_refund(refund_amount, ofd, card_pan)
+        return await self.session.delete(
+            f"{MulticardEndpoints.PAYMENT}/{uuid}/partial", json_data=body
+        )
+
+    @handle_exceptions
+    async def send_fiscal(self, uuid, url, *, is_refund=None) -> Dict[str, Any]:
+        body = self._build_fiscal(url, is_refund)
+        return await self.session.patch(
+            f"{MulticardEndpoints.PAYMENT}/{uuid}/fiscal", json_data=body
         )
 
 
@@ -87,7 +118,7 @@ class MulticardGateway(_SyncGateway):
             session=self.session, store_id=self.store_id
         )
         self.invoices = MulticardInvoices(session=self.session, store_id=self.store_id)
-        self.payments = MulticardPayments(session=self.session)
+        self.payments = MulticardPayments(session=self.session, store_id=self.store_id)
         self.cards = MulticardCards(session=self.session, store_id=self.store_id)
         self._internal.invoices = self.invoices
         self._internal.payments = self.payments

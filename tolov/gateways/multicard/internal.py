@@ -14,7 +14,7 @@ class MulticardGatewayInternal:
         self.session = session
         self.store_id = store_id
         self.invoices = MulticardInvoices(session=session, store_id=store_id)
-        self.payments = MulticardPayments(session=session)
+        self.payments = MulticardPayments(session=session, store_id=store_id)
         self.cards = MulticardCards(session=session, store_id=store_id)
 
     @staticmethod
