@@ -12,7 +12,6 @@ from tolov.core.http import HttpClient, AsyncHttpClient
 from tolov.core.exceptions import (
     ExternalServiceError,
     TransactionNotFound,
-    InvalidAmount,
 )
 from tolov.gateways.multicard.constants import (
     MulticardNetworks,
@@ -22,10 +21,12 @@ from tolov.gateways.multicard.constants import (
 
 GMT5 = timezone(timedelta(hours=5))
 
+# Only map codes whose meaning is unambiguous. ERROR_FIELDS is a generic
+# validation error (seen live for card/terminal support, not just amounts),
+# so it falls through to ExternalServiceError carrying the real code+details.
 _ERROR_MAP = {
     MulticardErrors.NOT_FOUND: TransactionNotFound,
     MulticardErrors.CARD_NOT_FOUND: TransactionNotFound,
-    MulticardErrors.FIELDS: InvalidAmount,
 }
 
 
