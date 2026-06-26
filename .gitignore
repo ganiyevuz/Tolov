@@ -31,3 +31,6 @@ build/
 *.dll
 pyarmor_runtime_*/
 .pyarmor/
+
+# local planning artifacts (not tracked)
+docs/
