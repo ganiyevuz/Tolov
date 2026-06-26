@@ -19,6 +19,9 @@ class MulticardEndpoints:
     CARD_CHECK_PINFL = "/payment/card/check-pinfl"  # POST
     HOLD = "/payment/hold"  # POST create; PUT/GET/DELETE /{id}; PUT /{id}/charge
     CREDIT = "/payment/credit"  # POST payout; PUT/GET /{uuid}
+    APPLICATION = "/payment/application"  # GET app info
+    MERCHANT_ACCOUNT = "/payment/merchant-account"  # GET /{recipient}
+    STORE = "/payment/store"  # GET /{store_id}/history, /{store_id}/credit-history
 
 
 class MulticardStatus:

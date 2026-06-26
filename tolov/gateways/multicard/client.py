@@ -30,6 +30,8 @@ class MulticardGateway(BasePaymentGateway):
         self.payments = self._internal.payments
         self.cards = self._internal.cards
         self.holds = self._internal.holds
+        self.payouts = self._internal.payouts
+        self.reports = self._internal.reports
 
     @handle_exceptions
     def create_payment(

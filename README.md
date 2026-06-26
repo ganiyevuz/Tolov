@@ -374,6 +374,24 @@ mc.holds.cancel(hold_id)
 mc.holds.info(hold_id)
 ```
 
+**Payouts** (credit a card by `pan` or saved `token`; `kyc_data` required > 10M som):
+
+```python
+payout = mc.payouts.create(amount=10_000, invoice_id="po_1", token="<card_token>")
+# If created with confirmable=True, confirm with an OTP:
+mc.payouts.confirm(payout["uuid"], otp="123456")
+mc.payouts.info("<uuid>")
+```
+
+**Reporting** (read-only; dates `YYYY-mm-dd HH:MM:SS`, GMT+5):
+
+```python
+mc.reports.app_info()                       # wallet balance, OTP settings, ...
+mc.reports.recipient_details("<merchant-account-uuid>")
+mc.reports.payment_registry("2026-06-01 00:00:00", "2026-06-26 23:59:59", limit=100)
+mc.reports.payout_history("2026-06-01 00:00:00", "2026-06-26 23:59:59")
+```
+
 ---
 
 ## Django Integration

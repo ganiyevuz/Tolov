@@ -8,6 +8,8 @@ from tolov.gateways.multicard.invoices import MulticardInvoices as _SyncInvoices
 from tolov.gateways.multicard.payments import MulticardPayments as _SyncPayments
 from tolov.gateways.multicard.cards import MulticardCards as _SyncCards
 from tolov.gateways.multicard.holds import MulticardHolds as _SyncHolds
+from tolov.gateways.multicard.payouts import MulticardPayouts as _SyncPayouts
+from tolov.gateways.multicard.reports import MulticardReports as _SyncReports
 from tolov.gateways.multicard.internal import MulticardGatewayInternal
 from tolov.gateways.multicard.client import MulticardGateway as _SyncGateway
 
@@ -136,6 +138,59 @@ class MulticardHolds(_SyncHolds):
         return await self.session.delete(f"{MulticardEndpoints.HOLD}/{hold_id}")
 
 
+class MulticardPayouts(_SyncPayouts):
+    """Async payouts — reuses ``_build_create``."""
+
+    @handle_exceptions
+    async def create(self, amount, invoice_id, *, pan=None, token=None, **kwargs) -> Dict[str, Any]:
+        body = self._build_create(amount, invoice_id, pan=pan, token=token, **kwargs)
+        return await self.session.post(MulticardEndpoints.CREDIT, json_data=body)
+
+    @handle_exceptions
+    async def confirm(self, uuid, otp) -> Dict[str, Any]:
+        return await self.session.put(
+            f"{MulticardEndpoints.CREDIT}/{uuid}", json_data={"otp": otp}
+        )
+
+    @handle_exceptions
+    async def info(self, uuid) -> Dict[str, Any]:
+        return await self.session.get(f"{MulticardEndpoints.CREDIT}/{uuid}")
+
+
+class MulticardReports(_SyncReports):
+    """Async reporting — reuses ``_history_params``."""
+
+    @handle_exceptions
+    async def app_info(self) -> Dict[str, Any]:
+        return await self.session.get(MulticardEndpoints.APPLICATION)
+
+    @handle_exceptions
+    async def recipient_details(self, recipient) -> Dict[str, Any]:
+        return await self.session.get(
+            f"{MulticardEndpoints.MERCHANT_ACCOUNT}/{recipient}"
+        )
+
+    @handle_exceptions
+    async def payment_registry(
+        self, start_date, end_date, *, offset=0, limit=50, only_status=None, store_id=None
+    ) -> Dict[str, Any]:
+        store_id = store_id if store_id is not None else self.store_id
+        params = self._history_params(start_date, end_date, offset, limit, only_status)
+        return await self.session.get(
+            f"{MulticardEndpoints.STORE}/{store_id}/history", params=params
+        )
+
+    @handle_exceptions
+    async def payout_history(
+        self, start_date, end_date, *, offset=0, limit=50, only_status=None, store_id=None
+    ) -> Dict[str, Any]:
+        store_id = store_id if store_id is not None else self.store_id
+        params = self._history_params(start_date, end_date, offset, limit, only_status)
+        return await self.session.get(
+            f"{MulticardEndpoints.STORE}/{store_id}/credit-history", params=params
+        )
+
+
 class MulticardGateway(_SyncGateway):
     """Async Multicard gateway — async session + async sub-clients."""
 
@@ -152,10 +207,14 @@ class MulticardGateway(_SyncGateway):
         self.payments = MulticardPayments(session=self.session, store_id=self.store_id)
         self.cards = MulticardCards(session=self.session, store_id=self.store_id)
         self.holds = MulticardHolds(session=self.session, store_id=self.store_id)
+        self.payouts = MulticardPayouts(session=self.session, store_id=self.store_id)
+        self.reports = MulticardReports(session=self.session, store_id=self.store_id)
         self._internal.invoices = self.invoices
         self._internal.payments = self.payments
         self._internal.cards = self.cards
         self._internal.holds = self.holds
+        self._internal.payouts = self.payouts
+        self._internal.reports = self.reports
 
     @handle_exceptions
     async def create_payment(
