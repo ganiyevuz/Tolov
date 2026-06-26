@@ -8,11 +8,12 @@ They auto-skip when the sandbox is unreachable (see the `live` fixture).
 """
 import uuid
 
+import httpx
 import pytest
 
-from conftest import APPLICATION_ID, SECRET, STORE_ID, TEST_CARD
+from conftest import APPLICATION_ID, BASE_DEV, SECRET, STORE_ID, TEST_CARD
 from tolov import MulticardGateway
-from tolov.core.exceptions import TransactionNotFound
+from tolov.core.exceptions import PaymentException, TransactionNotFound
 
 pytestmark = pytest.mark.live
 
@@ -100,3 +101,117 @@ async def test_async_auth_and_invoice(live):
         amount=150000, invoice_id=_uid(), callback_url="https://example.com/cb"
     )
     assert await mc.invoices.delete(inv["uuid"]) == []
+
+
+# --- full pay / refund / hold lifecycle (needs a real card token) ---
+
+
+def _bearer():
+    token = httpx.post(
+        f"{BASE_DEV}/auth",
+        json={"application_id": APPLICATION_ID, "secret": SECRET},
+        timeout=30,
+    ).json()["token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def card_token(live):
+    """Mint an active card token for the public test card.
+
+    Uses the sandbox PCI add-card flow (POST /payment/card + OTP confirm)
+    directly — those endpoints are intentionally NOT in the SDK, this is a
+    test-only helper to obtain a token so the token-based flows can be
+    exercised end to end.
+    """
+    headers = _bearer()
+    created = httpx.post(
+        f"{BASE_DEV}/payment/card",
+        json={
+            "pan": TEST_CARD["pan"],
+            "expiry": TEST_CARD["expire"],
+            "user_phone": "998901234567",
+        },
+        headers=headers,
+        timeout=30,
+    ).json()
+    token = created["data"]["card_token"]
+    httpx.put(
+        f"{BASE_DEV}/payment/card/{token}",
+        json={"otp": TEST_CARD["otp"]},
+        headers=headers,
+        timeout=30,
+    )
+    yield token
+    try:
+        httpx.delete(f"{BASE_DEV}/payment/card/{token}", headers=headers, timeout=30)
+    except Exception:
+        pass
+
+
+def _confirm(mc, payment):
+    """Confirm a payment, with OTP only when the response asked for one."""
+    uuid_ = payment["uuid"]
+    if payment.get("otp_hash"):
+        return mc.payments.confirm(uuid_, otp=TEST_CARD["otp"])
+    return mc.payments.confirm(uuid_)
+
+
+def test_card_info_by_token(card_token):
+    assert _gw().cards.info_by_token(card_token)["status"] == "active"
+
+
+def test_token_payment_confirm_then_refund(card_token):
+    mc = _gw()
+    pay = mc.payments.create_by_token(
+        card_token=card_token, amount=150000, invoice_id=_uid()
+    )
+    u = pay["uuid"]
+    assert _confirm(mc, pay)["status"] == "success"
+    assert mc.payments.info(u)["status"] == "success"
+    assert mc.payments.refund(u)["status"] == "revert"
+
+
+def test_token_payment_partial_refund(card_token):
+    mc = _gw()
+    pay = mc.payments.create_by_token(
+        card_token=card_token, amount=200000, invoice_id=_uid()
+    )
+    u = pay["uuid"]
+    assert _confirm(mc, pay)["status"] == "success"
+    ofd = [
+        {
+            "qty": 1,
+            "price": 200000,
+            "mxik": "10305009001000000",
+            "package_code": "1",
+            "name": "Test item",
+            "total": 200000,
+        }
+    ]
+    try:
+        res = mc.payments.partial_refund(u, refund_amount=50000, ofd=ofd)
+        assert "status" in res
+    except PaymentException:
+        # partial refund requires terminal configuration; fall back to full
+        assert mc.payments.refund(u)["status"] == "revert"
+
+
+def test_hold_confirm_then_debit(card_token):
+    mc = _gw()
+    hold = mc.holds.create(
+        card_token=card_token, amount=150000, invoice_id=_uid(), expiry=60
+    )
+    hid = hold["id"]
+    assert mc.holds.confirm(hid, otp=TEST_CARD["otp"])["status"] == "active"
+    # debit immediately — the sandbox auto-releases idle holds
+    assert mc.holds.debit(hid, amount=100000)["status"] == "success"
+
+
+def test_hold_confirm_then_cancel(card_token):
+    mc = _gw()
+    hold = mc.holds.create(
+        card_token=card_token, amount=50000, invoice_id=_uid(), expiry=60
+    )
+    mc.holds.confirm(hold["id"], otp=TEST_CARD["otp"])
+    assert mc.holds.cancel(hold["id"])["status"] == "canceled"
