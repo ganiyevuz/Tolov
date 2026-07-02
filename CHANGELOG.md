@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Webhook credential/signature checks are now constant-time.** Basic-Auth
+  verification (`BasePaymentProcessor.check_basic_auth`, used by Payme/Uzum/Paynet)
+  and the Click (Django + FastAPI) and Octo signature checks now use
+  `hmac.compare_digest` instead of `==`/`!=`, closing a timing side-channel that
+  could leak the merchant key/signature byte-by-byte.
+- **Octo webhook no longer logs the raw callback payload** (which carries masked
+  PAN, card metadata, and phone); it logs only the payment UUID, status, and
+  shop transaction id.
+- `HttpClient`/`AsyncHttpClient` now emit a warning when `verify_ssl=False`, so a
+  disabled-TLS misconfiguration is visible in production logs.
+
+### Fixed
+
+- **Webhook payment transitions now fire their success/cancel hooks exactly
+  once** under concurrent or retried provider callbacks. Every Django handler
+  (Payme, Click, Uzum, Paynet, Octo, Multicard) wraps its
+  fetch → state-check → mark → hook in `transaction.atomic()` +
+  `select_for_update()`; the sync FastAPI handlers use
+  `with_for_update()` + `populate_existing()`. Multicard previously fired its
+  success hook on every (including retried) callback.
+
+### Added
+
+- **Async FastAPI webhook handlers** — `tolov.integrations.fastapi.aio` provides
+  `PaymeWebhookHandler`, `ClickWebhookHandler`, and `MulticardWebhookHandler` that
+  operate on a SQLAlchemy `AsyncSession`, with the same protocol behavior,
+  constant-time checks, and exactly-once `FOR UPDATE` locking as the sync
+  handlers. Adds async model helpers (`acreate_transaction`, `amark_as_paid`,
+  `amark_as_cancelled`) and `run_migrations_async`. The `fastapi` extra now
+  installs `sqlalchemy[asyncio]`.
+
 ## [2.1.0] - 2026-06-27
 
 ### Added
