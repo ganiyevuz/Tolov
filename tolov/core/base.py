@@ -2,6 +2,7 @@
 Base classes for payment gateways.
 """
 import base64
+import hmac
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Union
 
@@ -137,10 +138,17 @@ class BasePaymentProcessor:
 
             username, password = decoded.split(":", 1)
 
-            if expected_username is not None and username != expected_username:
+            # Constant-time compares: a short-circuiting ``!=`` on the secret
+            # leaks it byte-by-byte to a timing oracle, and this key is the
+            # only thing gating forged payment callbacks.
+            if expected_username is not None and not hmac.compare_digest(
+                username.encode("utf-8"), expected_username.encode("utf-8")
+            ):
                 raise PermissionDenied("Invalid credentials")
 
-            if expected_password is not None and password != expected_password:
+            if expected_password is not None and not hmac.compare_digest(
+                password.encode("utf-8"), expected_password.encode("utf-8")
+            ):
                 raise PermissionDenied("Invalid credentials")
 
         except PermissionDenied:

@@ -82,6 +82,13 @@ class HttpClient:
         self.headers = headers or {}
         self.timeout = timeout
         self.verify_ssl = verify_ssl
+        if not verify_ssl:
+            logger.warning(
+                "TLS certificate verification is DISABLED for {} — traffic to "
+                "this payment provider is exposed to MITM. Do not use in "
+                "production.",
+                _safe_target(base_url),
+            )
         self._client = httpx.Client(verify=self.verify_ssl)
 
     def close(self):
@@ -228,6 +235,13 @@ class AsyncHttpClient:
         self.headers = headers or {}
         self.timeout = timeout
         self.verify_ssl = verify_ssl
+        if not verify_ssl:
+            logger.warning(
+                "TLS certificate verification is DISABLED for {} — traffic to "
+                "this payment provider is exposed to MITM. Do not use in "
+                "production.",
+                _safe_target(base_url),
+            )
         self._client = httpx.AsyncClient(verify=self.verify_ssl)
 
     async def aclose(self):

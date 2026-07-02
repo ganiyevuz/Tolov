@@ -14,6 +14,7 @@ from loguru import logger
 from django.views import View
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.db.transaction import atomic
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils.module_loading import import_string
 
@@ -40,7 +41,9 @@ class MulticardWebhook(BasePaymentProcessor, View):
         try:
             self.account_model = import_string(model_path) if model_path else None
         except ImportError:
-            logger.error("Could not import TOLOV.MULTICARD.ACCOUNT_MODEL={}", model_path)
+            logger.error(
+                "Could not import TOLOV.MULTICARD.ACCOUNT_MODEL={}", model_path
+            )
             raise
 
     def _expected_sign(self, params):
@@ -64,7 +67,9 @@ class MulticardWebhook(BasePaymentProcessor, View):
             )
             return HttpResponseForbidden("invalid sign")
 
-        if self.store_id is not None and str(params.get("store_id")) != str(self.store_id):
+        if self.store_id is not None and str(params.get("store_id")) != str(
+            self.store_id
+        ):
             logger.warning(
                 "Multicard webhook: store_id mismatch (got {}, expected {})",
                 params.get("store_id"),
@@ -72,8 +77,7 @@ class MulticardWebhook(BasePaymentProcessor, View):
             )
             return HttpResponseForbidden("store mismatch")
 
-        transaction = self._upsert(params)
-        self.successfully_payment(params, transaction)
+        self._upsert(params)
         return JsonResponse({"success": True})
 
     def _upsert(self, params):
@@ -83,23 +87,33 @@ class MulticardWebhook(BasePaymentProcessor, View):
             if account is not None:
                 account_id = account.id
 
-        transaction = PaymentTransaction.create_transaction(
-            gateway=PaymentTransaction.MULTICARD,
-            transaction_id=params.get("uuid"),
-            account_id=account_id,
-            amount=Decimal(str(params.get("amount", 0))) / 100,
-            extra_data={
-                "card_token": params.get("card_token"),
-                "card_pan": params.get("card_pan"),
-                "ps": params.get("ps"),
-                "receipt_url": params.get("receipt_url"),
-                "phone": params.get("phone"),
-                "billing_id": params.get("billing_id"),
-                "payment_time": params.get("payment_time"),
-                "raw_params": params,
-            },
-        )
-        transaction.mark_as_paid()
+        # Lock the row so concurrent/retried success callbacks serialize and the
+        # success hook fires exactly once. Multicard retries this callback, so
+        # firing must be gated on the first CREATED -> SUCCESSFULLY transition.
+        with atomic():
+            PaymentTransaction.create_transaction(
+                gateway=PaymentTransaction.MULTICARD,
+                transaction_id=params.get("uuid"),
+                account_id=account_id,
+                amount=Decimal(str(params.get("amount", 0))) / 100,
+                extra_data={
+                    "card_token": params.get("card_token"),
+                    "card_pan": params.get("card_pan"),
+                    "ps": params.get("ps"),
+                    "receipt_url": params.get("receipt_url"),
+                    "phone": params.get("phone"),
+                    "billing_id": params.get("billing_id"),
+                    "payment_time": params.get("payment_time"),
+                    "raw_params": params,
+                },
+            )
+            transaction = PaymentTransaction._default_manager.select_for_update().get(
+                gateway=PaymentTransaction.MULTICARD,
+                transaction_id=params.get("uuid"),
+            )
+            if transaction.state != PaymentTransaction.SUCCESSFULLY:
+                transaction.mark_as_paid()
+                self.successfully_payment(params, transaction)
         return transaction
 
     def _find_account(self, value):

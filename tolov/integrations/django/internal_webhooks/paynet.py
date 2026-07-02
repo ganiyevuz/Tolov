@@ -8,6 +8,7 @@ from datetime import datetime
 
 from django.views import View
 from django.conf import settings
+from django.db.transaction import atomic
 from django.http import JsonResponse
 from django.utils.module_loading import import_string
 
@@ -270,7 +271,8 @@ class PaynetWebhook(BasePaymentProcessor, View):
         except PaymentTransaction.DoesNotExist:
             pass
 
-        # Create transaction
+        # Create the transaction, then lock the row and finalize so concurrent
+        # provider retries serialize and the success hook fires exactly once.
         transaction = PaymentTransaction.create_transaction(
             gateway=PaymentTransaction.PAYNET,
             transaction_id=transaction_id,
@@ -283,17 +285,21 @@ class PaynetWebhook(BasePaymentProcessor, View):
             },
         )
 
-        if transaction.state != PaymentTransaction.SUCCESSFULLY:
-            # Using / 100 for now.
-            transaction.amount = Decimal(amount) / 100
-            transaction.state = (
-                PaymentTransaction.SUCCESSFULLY
-            )  # Paynet perform IS the payment execution usually
-            transaction.save()
+        with atomic():
+            transaction = PaymentTransaction._default_manager.select_for_update().get(
+                gateway=PaymentTransaction.PAYNET, transaction_id=transaction_id
+            )
+            if transaction.state != PaymentTransaction.SUCCESSFULLY:
+                # Using / 100 for now.
+                transaction.amount = Decimal(amount) / 100
+                transaction.state = (
+                    PaymentTransaction.SUCCESSFULLY
+                )  # Paynet perform IS the payment execution usually
+                transaction.save()
 
-            transaction.mark_as_paid()
+                transaction.mark_as_paid()
 
-            self.successfully_payment(params, transaction)
+                self.successfully_payment(params, transaction)
 
         return {
             "providerTrnId": transaction.id,
@@ -333,23 +339,22 @@ class PaynetWebhook(BasePaymentProcessor, View):
         transaction_id = params.get("transactionId")
 
         try:
-            transaction = PaymentTransaction._default_manager.get(
-                gateway=PaymentTransaction.PAYNET, transaction_id=transaction_id
-            )
+            # Lock the row so concurrent cancels serialize and the cancel hook
+            # fires exactly once.
+            with atomic():
+                transaction = (
+                    PaymentTransaction._default_manager.select_for_update().get(
+                        gateway=PaymentTransaction.PAYNET, transaction_id=transaction_id
+                    )
+                )
+                if transaction.state not in (
+                    PaymentTransaction.CANCELLED,
+                    PaymentTransaction.CANCELLED_DURING_INIT,
+                ):
+                    transaction.mark_as_cancelled()
+                    self.cancelled_payment(params, transaction)
         except PaymentTransaction.DoesNotExist:
             raise TransactionNotFound("Transaction not found")
-
-        if transaction.state == PaymentTransaction.CANCELLED:
-            # throw -31061 or 202 TransactionAlreadyCancelled
-            # PaynetErrors.TRANSACTION_ALREADY_CANCELLED = 202
-            return {
-                "providerTrnId": transaction.id,
-                "timestamp": transaction.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-                "transactionState": 2,  # Cancelled
-            }
-
-        transaction.mark_as_cancelled()
-        self.cancelled_payment(params, transaction)
 
         return {
             "providerTrnId": transaction.id,

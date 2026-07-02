@@ -10,6 +10,7 @@ from datetime import datetime
 
 from django.views import View
 from django.conf import settings
+from django.db.transaction import atomic
 from django.http import JsonResponse
 from django.utils.module_loading import import_string
 
@@ -304,17 +305,19 @@ class UzumWebhook(BasePaymentProcessor, View):
         service_id = data.get("serviceId", self.service_id)
 
         try:
-            transaction = PaymentTransaction.objects.get(
-                gateway=PaymentTransaction.UZUM, transaction_id=trans_id
-            )
+            # Lock the row so concurrent provider retries serialize here and the
+            # success hook fires exactly once.
+            with atomic():
+                transaction = PaymentTransaction.objects.select_for_update().get(
+                    gateway=PaymentTransaction.UZUM, transaction_id=trans_id
+                )
+                if transaction.state != PaymentTransaction.SUCCESSFULLY:
+                    transaction.mark_as_paid()
+                    self.successfully_payment(data, transaction)
         except PaymentTransaction.DoesNotExist:
             # Transaction not found
             # raise TransactionNotFound -> 10009 or 99999
             raise TransactionNotFound("Transaction not found")
-
-        if transaction.state != PaymentTransaction.SUCCESSFULLY:
-            transaction.mark_as_paid()
-            self.successfully_payment(data, transaction)
 
         # Prepare data for response
         account = None
@@ -356,18 +359,19 @@ class UzumWebhook(BasePaymentProcessor, View):
         service_id = data.get("serviceId", self.service_id)
 
         try:
-            transaction = PaymentTransaction.objects.get(
-                gateway=PaymentTransaction.UZUM, transaction_id=trans_id
-            )
+            # Lock the row so concurrent reversals serialize and the cancel hook
+            # fires exactly once.
+            with atomic():
+                transaction = PaymentTransaction.objects.select_for_update().get(
+                    gateway=PaymentTransaction.UZUM, transaction_id=trans_id
+                )
+                # Check if transaction is already cancelled
+                if transaction.state == PaymentTransaction.CANCELLED:
+                    raise TransactionCancelled("Transaction has already been cancelled")
+                transaction.mark_as_cancelled()
+                self.cancelled_payment(data, transaction)
         except PaymentTransaction.DoesNotExist:
             raise TransactionNotFound("Transaction not found")
-
-        # Check if transaction is already cancelled
-        if transaction.state == PaymentTransaction.CANCELLED:
-            raise TransactionCancelled("Transaction has already been cancelled")
-
-        transaction.mark_as_cancelled()
-        self.cancelled_payment(data, transaction)
 
         # Prepare data for response
         account = None

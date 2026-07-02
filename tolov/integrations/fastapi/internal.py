@@ -379,12 +379,18 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
         """Handle PerformTransaction method."""
         transaction_id = params.get("id")
 
+        # Lock the row (FOR UPDATE) so concurrent provider retries serialize
+        # here and the success hook fires exactly once. mark_as_paid commits,
+        # releasing the lock; the state check between SELECT and commit runs
+        # under the lock.
         transaction = (
             self.db.query(PaymentTransaction)
             .filter(
                 PaymentTransaction.gateway == PaymentTransaction.PAYME,
                 PaymentTransaction.transaction_id == transaction_id,
             )
+            .populate_existing()
+            .with_for_update()
             .first()
         )
 
@@ -394,9 +400,9 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
                 detail=f"Transaction {transaction_id} not found",
             )
 
-        transaction.mark_as_paid(self.db)
-
-        self.successfully_payment(params, transaction)
+        if transaction.state != PaymentTransaction.SUCCESSFULLY:
+            transaction.mark_as_paid(self.db)
+            self.successfully_payment(params, transaction)
 
         return {
             "transaction": transaction.transaction_id,
@@ -476,12 +482,17 @@ class PaymeWebhookHandlerInternal(BasePaymentProcessor):
         transaction_id = params.get("id")
         reason = params.get("reason")
 
+        # Lock the row (FOR UPDATE) so concurrent cancels serialize and the
+        # cancel hook fires exactly once (the already-cancelled branch below,
+        # now evaluated under the lock, short-circuits the second caller).
         transaction = (
             self.db.query(PaymentTransaction)
             .filter(
                 PaymentTransaction.gateway == PaymentTransaction.PAYME,
                 PaymentTransaction.transaction_id == transaction_id,
             )
+            .populate_existing()
+            .with_for_update()
             .first()
         )
 
@@ -780,10 +791,29 @@ class ClickWebhookHandlerInternal:
                     self.db.commit()
                     self.db.refresh(transaction)
 
+                # Lock the row (FOR UPDATE) and refresh the in-memory state so
+                # concurrent completes serialize and the success/cancel hook
+                # fires exactly once. populate_existing() overwrites the instance
+                # loaded unlocked above with the freshly-read locked row.
+                transaction = (
+                    self.db.query(PaymentTransaction)
+                    .filter(
+                        PaymentTransaction.gateway == PaymentTransaction.CLICK,
+                        PaymentTransaction.transaction_id == click_trans_id,
+                    )
+                    .populate_existing()
+                    .with_for_update()
+                    .first()
+                )
+
                 if is_successful:
-                    transaction.mark_as_paid(self.db)
-                    self.successfully_payment(params, transaction)
-                else:
+                    if transaction.state != PaymentTransaction.SUCCESSFULLY:
+                        transaction.mark_as_paid(self.db)
+                        self.successfully_payment(params, transaction)
+                elif transaction.state not in (
+                    PaymentTransaction.CANCELLED,
+                    PaymentTransaction.CANCELLED_DURING_INIT,
+                ):
                     error_reason = f"Error code: {error}"
                     transaction.mark_as_cancelled(self.db, reason=error_reason)
                     self.cancelled_payment(params, transaction)
@@ -844,7 +874,11 @@ class ClickWebhookHandlerInternal:
 
         calculated_hash = hashlib.md5("".join(text_parts).encode("utf-8")).hexdigest()
 
-        if calculated_hash != sign_string:
+        # Constant-time compare: the secret_key is folded into the signed
+        # string, so a short-circuiting ``!=`` leaks it to a timing oracle.
+        if not hmac.compare_digest(
+            calculated_hash.encode("utf-8"), str(sign_string).encode("utf-8")
+        ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature"
             )
@@ -970,7 +1004,9 @@ class MulticardWebhookHandlerInternal:
                 status_code=403,
             )
 
-        if self.store_id is not None and str(params.get("store_id")) != str(self.store_id):
+        if self.store_id is not None and str(params.get("store_id")) != str(
+            self.store_id
+        ):
             logger.warning(
                 "Multicard webhook: store_id mismatch (got {}, expected {})",
                 params.get("store_id"),
@@ -982,8 +1018,7 @@ class MulticardWebhookHandlerInternal:
                 status_code=403,
             )
 
-        transaction = self._upsert(params)
-        self.successfully_payment(params, transaction)
+        self._upsert(params)
         return Response(
             content=json.dumps({"success": True}),
             media_type="application/json",
@@ -997,7 +1032,7 @@ class MulticardWebhookHandlerInternal:
             if account is not None:
                 account_id = account.id
 
-        transaction = PaymentTransaction.create_transaction(
+        PaymentTransaction.create_transaction(
             db=self.db,
             gateway=PaymentTransaction.MULTICARD,
             transaction_id=params.get("uuid"),
@@ -1014,7 +1049,23 @@ class MulticardWebhookHandlerInternal:
                 "raw_params": params,
             },
         )
-        transaction.mark_as_paid(self.db)
+
+        # Lock the row (FOR UPDATE) and refresh in-memory state so retried/
+        # concurrent success callbacks serialize and the success hook fires
+        # exactly once (Multicard retries this callback).
+        transaction = (
+            self.db.query(PaymentTransaction)
+            .filter(
+                PaymentTransaction.gateway == PaymentTransaction.MULTICARD,
+                PaymentTransaction.transaction_id == params.get("uuid"),
+            )
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+        if transaction.state != PaymentTransaction.SUCCESSFULLY:
+            transaction.mark_as_paid(self.db)
+            self.successfully_payment(params, transaction)
         return transaction
 
     def _find_account(self, value: Any) -> Any:

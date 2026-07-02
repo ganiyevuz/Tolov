@@ -2,8 +2,10 @@
 Click internal webhook handler.
 """
 import hashlib
+import hmac
 from loguru import logger
 from django.conf import settings
+from django.db.transaction import atomic
 from django.http import JsonResponse
 from django.utils.module_loading import import_string
 from django.views import View
@@ -177,29 +179,47 @@ class ClickWebhook(View):
             if action == 1:
                 is_successful = error >= 0
 
-                try:
-                    transaction = PaymentTransaction._default_manager.get(
-                        gateway=PaymentTransaction.CLICK, transaction_id=click_trans_id
-                    )
-                except PaymentTransaction.DoesNotExist:
-                    transaction = PaymentTransaction.create_transaction(
-                        gateway=PaymentTransaction.CLICK,
-                        transaction_id=click_trans_id,
-                        account_id=str(account.id),
-                        amount=amount,
-                        extra_data={
-                            "raw_params": params,
-                            "merchant_trans_id": merchant_trans_id,
-                        },
+                # Lock the row so concurrent provider retries serialize here and
+                # the success/cancel hook fires exactly once.
+                with atomic():
+                    transaction = (
+                        PaymentTransaction._default_manager.select_for_update()
+                        .filter(
+                            gateway=PaymentTransaction.CLICK,
+                            transaction_id=click_trans_id,
+                        )
+                        .first()
                     )
 
-                if is_successful:
-                    if transaction.state != PaymentTransaction.SUCCESSFULLY:
-                        transaction.mark_as_paid()
-                        self.successfully_payment(params, transaction)
-                else:
-                    transaction.mark_as_cancelled(reason=f"Error code: {error}")
-                    self.cancelled_payment(params, transaction)
+                    if transaction is None:
+                        # Complete without a prior Prepare — create, then re-lock.
+                        PaymentTransaction.create_transaction(
+                            gateway=PaymentTransaction.CLICK,
+                            transaction_id=click_trans_id,
+                            account_id=str(account.id),
+                            amount=amount,
+                            extra_data={
+                                "raw_params": params,
+                                "merchant_trans_id": merchant_trans_id,
+                            },
+                        )
+                        transaction = (
+                            PaymentTransaction._default_manager.select_for_update().get(
+                                gateway=PaymentTransaction.CLICK,
+                                transaction_id=click_trans_id,
+                            )
+                        )
+
+                    if is_successful:
+                        if transaction.state != PaymentTransaction.SUCCESSFULLY:
+                            transaction.mark_as_paid()
+                            self.successfully_payment(params, transaction)
+                    elif transaction.state not in (
+                        PaymentTransaction.CANCELLED,
+                        PaymentTransaction.CANCELLED_DURING_INIT,
+                    ):
+                        transaction.mark_as_cancelled(reason=f"Error code: {error}")
+                        self.cancelled_payment(params, transaction)
 
                 return JsonResponse(
                     {
@@ -263,7 +283,11 @@ class ClickWebhook(View):
 
         calculated_hash = hashlib.md5("".join(text_parts).encode("utf-8")).hexdigest()
 
-        if calculated_hash != sign_string:
+        # Constant-time compare: the secret_key is folded into the signed
+        # string, so a short-circuiting ``!=`` leaks it to a timing oracle.
+        if not hmac.compare_digest(
+            calculated_hash.encode("utf-8"), str(sign_string).encode("utf-8")
+        ):
             raise PermissionDenied("Invalid signature")
 
     def _find_account(self, merchant_trans_id):

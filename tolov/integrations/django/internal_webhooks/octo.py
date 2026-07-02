@@ -5,12 +5,14 @@ Handles callback notifications from Octo's payment system.
 Octo sends POST requests to the ``notify_url`` specified during ``prepare_payment``.
 """
 import hashlib
+import hmac
 import json
 from loguru import logger
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict
 
 from django.conf import settings
+from django.db.transaction import atomic
 from django.http import JsonResponse
 from django.views import View
 from django.utils.module_loading import import_string
@@ -186,7 +188,14 @@ class OctoWebhook(View):
         if not isinstance(data, dict):
             raise ValueError("Invalid payload: JSON object expected")
 
-        logger.info("Octo webhook received: %s", data)
+        # Log only non-sensitive identifiers — the raw payload carries card
+        # data (maskedPan, card_type, rrn) and phone/PII we must not log.
+        logger.info(
+            "Octo webhook received: uuid={} status={} shop_transaction_id={}",
+            data.get("octo_payment_UUID"),
+            data.get("status"),
+            data.get("shop_transaction_id"),
+        )
         return data
 
     def _validate_provider_context(self, data: Dict[str, Any]) -> None:
@@ -253,10 +262,16 @@ class OctoWebhook(View):
         status: str,
         signature: str,
     ) -> bool:
-        """Verify callback signature using SHA-1."""
+        """Verify callback signature using SHA-1.
+
+        Constant-time compare: ``unique_key`` is folded into the hash, so a
+        short-circuiting ``==`` leaks it to a timing oracle.
+        """
         raw = f"{unique_key}{uuid}{status}"
         computed = hashlib.sha1(raw.encode("utf-8")).hexdigest().upper()
-        return computed == signature.upper()
+        return hmac.compare_digest(
+            computed.encode("utf-8"), signature.upper().encode("utf-8")
+        )
 
     def _find_account(self, account_id):
         """Find the account (order) from ACCOUNT_MODEL by ACCOUNT_FIELD."""
@@ -326,88 +341,100 @@ class OctoWebhook(View):
             "status": status,
         }
 
-        # 1. Check duplicate: if this octo_payment_UUID already processed
-        try:
-            transaction = PaymentTransaction._default_manager.get(
-                gateway=PaymentTransaction.OCTO,
-                transaction_id=octo_payment_uuid,
-            )
+        # Lock the row (when it exists) so concurrent provider retries serialize
+        # and the success/cancel hook fires exactly once. A freshly created row
+        # is already write-locked by its INSERT within this transaction.
+        with atomic():
+            # 1. Check duplicate: if this octo_payment_UUID already processed
+            try:
+                transaction = (
+                    PaymentTransaction._default_manager.select_for_update().get(
+                        gateway=PaymentTransaction.OCTO,
+                        transaction_id=octo_payment_uuid,
+                    )
+                )
 
-            # Already in a final state — return immediately
-            if transaction.state in (
-                PaymentTransaction.SUCCESSFULLY,
-                PaymentTransaction.CANCELLED,
-                PaymentTransaction.CANCELLED_DURING_INIT,
-            ):
-                # Allow explicit refund callback to move SUCCESSFULLY -> CANCELLED.
-                if (
-                    status == OctoStatus.REFUNDED
-                    and transaction.state == PaymentTransaction.SUCCESSFULLY
+                # Already in a final state — return immediately
+                if transaction.state in (
+                    PaymentTransaction.SUCCESSFULLY,
+                    PaymentTransaction.CANCELLED,
+                    PaymentTransaction.CANCELLED_DURING_INIT,
                 ):
-                    pass
-                else:
-                    logger.info(
-                        "Octo duplicate callback for %s, state=%s — skipping",
-                        octo_payment_uuid,
-                        transaction.state,
+                    # Allow explicit refund callback to move SUCCESSFULLY -> CANCELLED.
+                    if (
+                        status == OctoStatus.REFUNDED
+                        and transaction.state == PaymentTransaction.SUCCESSFULLY
+                    ):
+                        pass
+                    else:
+                        logger.info(
+                            "Octo duplicate callback for %s, state=%s — skipping",
+                            octo_payment_uuid,
+                            transaction.state,
+                        )
+                        return self._ok_response(transaction)
+
+                if transaction.amount is not None:
+                    self._validate_amount(total_sum, transaction.amount)
+
+                # Update extra_data on existing non-final transaction
+                current = transaction.extra_data or {}
+                current.update(extra_data)
+                transaction.extra_data = current
+                transaction.save(update_fields=["extra_data", "updated_at"])
+
+            except PaymentTransaction.DoesNotExist:
+                # 2. Find account (order) from ACCOUNT_MODEL
+                account = self._find_account(shop_transaction_id)
+
+                # 3. Validate amount against account model
+                expected_amount = getattr(account, self.amount_field, None)
+                if expected_amount is None:
+                    raise InvalidAmount(
+                        f"Account is missing '{self.amount_field}' field"
                     )
-                    return self._ok_response(transaction)
+                self._validate_amount(total_sum, expected_amount)
 
-            if transaction.amount is not None:
-                self._validate_amount(total_sum, transaction.amount)
+                # 4. Check one_time_payment: if this account already has a paid transaction
+                if self.one_time_payment:
+                    already_paid = PaymentTransaction._default_manager.filter(
+                        gateway=PaymentTransaction.OCTO,
+                        account_id=str(account.pk),
+                        state=PaymentTransaction.SUCCESSFULLY,
+                    ).exists()
 
-            # Update extra_data on existing non-final transaction
-            current = transaction.extra_data or {}
-            current.update(extra_data)
-            transaction.extra_data = current
-            transaction.save(update_fields=["extra_data", "updated_at"])
+                    if already_paid:
+                        logger.warning(
+                            "Octo: account %s already has a successful payment — rejecting",
+                            account.pk,
+                        )
+                        return self._error_response(
+                            "Payment already completed for this account",
+                            status=409,
+                            code="already_paid",
+                        )
 
-        except PaymentTransaction.DoesNotExist:
-            # 2. Find account (order) from ACCOUNT_MODEL
-            account = self._find_account(shop_transaction_id)
-
-            # 3. Validate amount against account model
-            expected_amount = getattr(account, self.amount_field, None)
-            if expected_amount is None:
-                raise InvalidAmount(f"Account is missing '{self.amount_field}' field")
-            self._validate_amount(total_sum, expected_amount)
-
-            # 4. Check one_time_payment: if this account already has a paid transaction
-            if self.one_time_payment:
-                already_paid = PaymentTransaction._default_manager.filter(
+                # 5. Create new transaction
+                #    transaction_id  = octo_payment_UUID  (Octo's unique ID)
+                #    account_id      = account.id          (merchant's order ID)
+                transaction = PaymentTransaction.create_transaction(
                     gateway=PaymentTransaction.OCTO,
+                    transaction_id=octo_payment_uuid,
                     account_id=str(account.pk),
-                    state=PaymentTransaction.SUCCESSFULLY,
-                ).exists()
+                    amount=total_sum,
+                    extra_data=extra_data,
+                )
 
-                if already_paid:
-                    logger.warning(
-                        "Octo: account %s already has a successful payment — rejecting",
-                        account.pk,
-                    )
-                    return self._error_response(
-                        "Payment already completed for this account",
-                        status=409,
-                        code="already_paid",
-                    )
+            if status == OctoStatus.SUCCEEDED:
+                transaction.mark_as_paid()
+                self.successfully_payment(data, transaction)
 
-            # 5. Create new transaction
-            #    transaction_id  = octo_payment_UUID  (Octo's unique ID)
-            #    account_id      = account.id          (merchant's order ID)
-            transaction = PaymentTransaction.create_transaction(
-                gateway=PaymentTransaction.OCTO,
-                transaction_id=octo_payment_uuid,
-                account_id=str(account.pk),
-                amount=total_sum,
-                extra_data=extra_data,
-            )
-
-        if status == OctoStatus.SUCCEEDED:
-            transaction.mark_as_paid()
-            self.successfully_payment(data, transaction)
-
-        elif status in (OctoStatus.CANCELED, OctoStatus.FAILED, OctoStatus.REFUNDED):
-            transaction.mark_as_cancelled()
-            self.cancelled_payment(data, transaction)
+            elif status in (
+                OctoStatus.CANCELED,
+                OctoStatus.FAILED,
+                OctoStatus.REFUNDED,
+            ):
+                transaction.mark_as_cancelled()
+                self.cancelled_payment(data, transaction)
 
         return self._ok_response(transaction)

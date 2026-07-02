@@ -8,6 +8,7 @@ from datetime import datetime
 
 from django.views import View
 from django.conf import settings
+from django.db.transaction import atomic
 from django.http import JsonResponse
 from django.utils.module_loading import import_string
 
@@ -291,17 +292,22 @@ class PaymeWebhook(BasePaymentProcessor, View):
     def _perform_transaction(self, params):
         transaction_id = params.get("id")
         try:
-            transaction = PaymentTransaction._default_manager.get(
-                gateway=PaymentTransaction.PAYME, transaction_id=transaction_id
-            )
+            # Lock the row so concurrent provider retries serialize here and the
+            # success hook fires exactly once (no double order fulfillment).
+            with atomic():
+                transaction = (
+                    PaymentTransaction._default_manager.select_for_update().get(
+                        gateway=PaymentTransaction.PAYME, transaction_id=transaction_id
+                    )
+                )
+
+                if transaction.state != PaymentTransaction.SUCCESSFULLY:
+                    transaction.mark_as_paid()
+                    self.successfully_payment(params, transaction)
         except PaymentTransaction.DoesNotExist:
             raise TransactionNotFound(
                 f"Transaction {transaction_id} not found"
             ) from None
-
-        if transaction.state != PaymentTransaction.SUCCESSFULLY:
-            transaction.mark_as_paid()
-            self.successfully_payment(params, transaction)
 
         return {
             "transaction": transaction.transaction_id,
@@ -350,24 +356,31 @@ class PaymeWebhook(BasePaymentProcessor, View):
         transaction_id = params.get("id")
         reason = params.get("reason")
 
+        cancelled_states = (
+            PaymentTransaction.CANCELLED,
+            PaymentTransaction.CANCELLED_DURING_INIT,
+        )
         try:
-            transaction = PaymentTransaction._default_manager.get(
-                gateway=PaymentTransaction.PAYME, transaction_id=transaction_id
-            )
+            # Lock the row so concurrent cancels serialize and the cancel hook
+            # fires exactly once.
+            with atomic():
+                transaction = (
+                    PaymentTransaction._default_manager.select_for_update().get(
+                        gateway=PaymentTransaction.PAYME, transaction_id=transaction_id
+                    )
+                )
+
+                if transaction.state not in cancelled_states:
+                    if transaction.state == PaymentTransaction.INITIATING:
+                        transaction.mark_as_cancelled_during_init(reason=reason)
+                    else:
+                        transaction.mark_as_cancelled(reason=reason)
+                    self.cancelled_payment(params, transaction)
         except PaymentTransaction.DoesNotExist:
             raise TransactionNotFound(
                 f"Transaction {transaction_id} not found"
             ) from None
 
-        if transaction.state == PaymentTransaction.CANCELLED:
-            return self._cancel_response(transaction)
-
-        if transaction.state == PaymentTransaction.INITIATING:
-            transaction.mark_as_cancelled_during_init(reason=reason)
-        else:
-            transaction.mark_as_cancelled(reason=reason)
-
-        self.cancelled_payment(params, transaction)
         return self._cancel_response(transaction)
 
     def _get_statement(self, params):
