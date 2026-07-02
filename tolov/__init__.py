@@ -6,7 +6,7 @@ Paynet, Octo, and Multicard payment systems in Uzbekistan. It supports Django
 and FastAPI.
 """
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 # Check framework availability
 try:
